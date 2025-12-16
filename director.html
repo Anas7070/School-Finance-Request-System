@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ผู้อำนวยการโรงเรียน – ตรวจสอบคำขอ</title>
+
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/director.css">
+
+  <script>
+    window.BACKEND_URL = "http://localhost/school_api/public";
+  </script>
+</head>
+<body>
+<header>
+  <div class="wrap row" style="justify-content:space-between">
+    <div>
+      <h1>ผู้อำนวยการโรงเรียน</h1>
+      <div class="subtitle">ตรวจสอบคำขอจากพนักงาน → ส่งต่อ ICORP Staff</div>
+    </div>
+    <div class="nav" id="navUser">
+      <span class="status" id="who"></span>
+      <a class="btn" href="#" id="logout">ออกจากระบบ</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap dir-layout" id="dirLayout">
+  <!-- ปุ่มเปิด/ปิดเมนู -->
+  <button class="sidebar-toggle" id="sidebarToggle">☰ เมนู</button>
+
+  <!-- Sidebar -->
+  <aside class="dir-sidebar" id="dirSidebar">
+    <div class="dir-sidebar-header">
+      <div class="dir-sidebar-title">เมนูผู้อำนวยการ</div>
+      <div class="dir-sidebar-sub">ตรวจสอบ / ไม่อนุมัติคำขอ</div>
+    </div>
+
+    <nav class="dir-nav">
+      <button class="dir-nav-item is-active" data-view="pending">📄 รอการตรวจสอบ</button>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <section class="dir-main">
+    <section id="view-pending" class="dir-view is-active">
+      <div class="card">
+        <h3>รอการตรวจสอบ</h3>
+        <table id="dirTable" class="request-table" style="margin-top:8px">
+          <thead>
+            <tr>
+              <th>รหัส</th>
+              <th>หัวข้อ</th>
+              <th>จำนวน</th>
+              <th>โรงเรียน</th>
+              <th>สถานะ</th>
+              <th>รายละเอียด</th>
+              <th>ACTION</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+</main>
+
+<!-- Modal รายละเอียด -->
+<div id="detailModal" class="modal-backdrop">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>รายละเอียดคำขอ</h3>
+      <button class="modal-close" id="detailClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-section-title">ข้อมูลคำขอ</div>
+      <div class="detail-grid">
+        <div class="detail-label">รหัสคำขอ</div>
+        <div class="detail-value" id="d-id">-</div>
+
+        <div class="detail-label">โรงเรียน</div>
+        <div class="detail-value" id="d-school">-</div>
+
+        <div class="detail-label">หัวข้อ</div>
+        <div class="detail-value" id="d-title">-</div>
+
+        <div class="detail-label">จำนวนเงิน</div>
+        <div class="detail-value" id="d-amount">-</div>
+
+        <div class="detail-label">สถานะล่าสุด</div>
+        <div class="detail-value">
+          <span class="tag-status" id="d-status">-</span>
+        </div>
+
+        <div class="detail-label">รายละเอียด</div>
+        <div class="detail-value" id="d-desc">-</div>
+      </div>
+
+      <div class="detail-section-title">ประวัติสถานะ (Timeline)</div>
+      <table class="timeline-table">
+        <thead>
+          <tr>
+            <th>สถานะ</th>
+            <th>บทบาท</th>
+            <th>หมายเหตุ</th>
+            <th>เวลา</th>
+          </tr>
+        </thead>
+        <tbody id="d-timeline-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal ระบุเหตุผลการไม่อนุมัติ -->
+<div id="rejectModal" class="reject-modal">
+  <div class="reject-modal-box">
+    <div class="reject-modal-header">
+      <h3>ระบุเหตุผลการไม่อนุมัติ</h3>
+      <button class="reject-modal-close" id="rejectModalClose">&times;</button>
+    </div>
+    <div class="reject-modal-content">
+      <div class="reject-modal-info">
+        <p><strong>คำขอ:</strong> <span id="rejectRequestTitle">-</span></p>
+        <p><strong>รหัส:</strong> <span id="rejectRequestId" class="mono">-</span></p>
+        <p><strong>จำนวน:</strong> <span id="rejectRequestAmount">-</span></p>
+      </div>
+
+      <label class="reject-modal-label">
+        กรุณาระบุเหตุผลที่ไม่อนุมัติ (ถ้ามี):
+      </label>
+      <textarea
+        id="rejectNote"
+        class="reject-modal-textarea"
+        placeholder="ระบุเหตุผลที่ไม่อนุมัติคำขอนี้..."
+      ></textarea>
+    </div>
+    <div class="reject-modal-actions">
+      <button class="reject-modal-btn reject-modal-cancel" id="rejectCancel">ยกเลิก</button>
+      <button class="reject-modal-btn reject-modal-submit" id="rejectSubmit">ยืนยันไม่อนุมัติ</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/common.js"></script>
+<script>
+  const BASE  = window.BACKEND_URL || "http://localhost/school_api/public";
+  const token = localStorage.getItem("jwt_token");
+  if (!token) location.href = "index.html";
+
+  const STATUS_PENDING  = "Pending";
+  const STATUS_VERIFIED = "Verified";
+  const STATUS_REVIEWED = "Reviewed";
+  const STATUS_APPROVED = "Approved";
+  const STATUS_REJECTED = "Rejected";
+
+  function roleLabel(role){
+    switch(role){
+      case 'employee':      return 'พนักงานโรงเรียน';
+      case 'director':      return 'ผู้อำนวยการ';
+      case 'icorp-staff':   return 'พนักงาน ICORP';
+      case 'icorp-manager': return 'ผู้จัดการ ICORP';
+      default:              return role || '-';
+    }
+  }
+
+  function mapStatusLabel(s){ return s || "-"; }
+
+  function mapStatusClass(s){
+    switch(s){
+      case STATUS_PENDING:  return "status-pending";
+      case STATUS_VERIFIED: return "status-reviewed";
+      case STATUS_REVIEWED: return "status-reviewed";
+      case STATUS_APPROVED: return "status-approved";
+      case STATUS_REJECTED: return "status-rejected";
+      default:              return "";
+    }
+  }
+
+  function fmtBaht(n){
+    try { return Number(n).toLocaleString('th-TH', {minimumFractionDigits: 0}); }
+    catch { return n; }
+  }
+  function fmtDateTime(str){
+    if(!str) return '-';
+    try{ return new Date(str).toLocaleString('th-TH'); }catch(e){ return str; }
+  }
+
+  async function verifyMe() {
+    const url = `${BASE}/api/auth/me?token=${encodeURIComponent(token)}`;
+    const res = await fetch(url, { headers: { Authorization: "Bearer " + token }});
+    const data = await res.json().catch(()=> ({}));
+    if (!res.ok || !data.profile) throw new Error("verify-failed");
+    return data.profile;
+  }
+
+  async function initAuth() {
+    try {
+      const me = await verifyMe();
+      if (me.role !== "director") throw new Error("role-mismatch");
+      localStorage.setItem("icr_session_v1", JSON.stringify(me));
+      document.getElementById("who").textContent = `${me.name} (${me.username})`;
+
+      const lg = document.getElementById("logout");
+      if (lg) lg.addEventListener("click", (e) => {
+        e.preventDefault();
+        localStorage.removeItem("jwt_token");
+        localStorage.removeItem("icr_session_v1");
+        location.href = "index.html";
+      });
+    } catch (e) {
+      localStorage.removeItem("jwt_token");
+      localStorage.removeItem("icr_session_v1");
+      location.href = "index.html";
+    }
+  }
+
+  // ===== Sidebar =====
+  function initSidebar(){
+    const layout = document.getElementById("dirLayout");
+    const toggle = document.getElementById("sidebarToggle");
+    if(toggle && layout){
+      toggle.addEventListener("click", ()=> layout.classList.toggle("sidebar-open"));
+    }
+
+    // มี view เดียวตอนนี้ แต่เผื่อขยาย
+    document.querySelectorAll(".dir-nav-item").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        document.querySelectorAll(".dir-nav-item").forEach(b=>b.classList.remove("is-active"));
+        btn.classList.add("is-active");
+        layout.classList.remove("sidebar-open");
+      });
+    });
+  }
+
+  let currentRejectRequest = null;
+
+  async function loadPending() {
+    const r = await fetch(`${BASE}/api/requests`, {
+      headers: { Authorization: "Bearer " + token }
+    });
+    if (r.status === 401) {
+      localStorage.removeItem("jwt_token");
+      localStorage.removeItem("icr_session_v1");
+      location.href = "index.html";
+      return;
+    }
+    const j = await r.json().catch(()=>({}));
+
+    // director ดึงเฉพาะ Pending
+    const items = (j.items || []).filter(x => x.status === STATUS_PENDING);
+
+    const tb = document.querySelector("#dirTable tbody");
+    tb.innerHTML = items.map(row => `
+      <tr>
+        <td class="mono">${row.id}</td>
+        <td>${row.title ?? "-"}</td>
+        <td>${fmtBaht(Number(row.amount || 0))}</td>
+        <td>${row.school ?? "-"}</td>
+        <td>
+          <span class="status ${mapStatusClass(row.status)}">
+            ${mapStatusLabel(row.status)}
+          </span>
+        </td>
+        <td>
+          <button class="btn-link" data-detail-id="${row.id}">ดูรายละเอียด</button>
+        </td>
+        <td class="actions-cell">
+          <button class="ok" data-act="verify" data-id="${row.id}">ตรวจสอบ</button>
+          <button class="danger" data-act="reject" data-id="${row.id}"
+            data-title="${(row.title || '').replaceAll('"','&quot;')}"
+            data-amount="${row.amount || 0}">
+            ไม่อนุมัติ
+          </button>
+        </td>
+      </tr>
+    `).join("");
+
+    tb.querySelectorAll("button[data-detail-id]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.getAttribute("data-detail-id");
+        openDetailModal(id);
+      });
+    });
+
+    tb.querySelectorAll("button[data-act='verify']").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id  = btn.getAttribute("data-id");
+        await doAction(id, STATUS_VERIFIED, "");
+      });
+    });
+
+    tb.querySelectorAll("button[data-act='reject']").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id  = btn.getAttribute("data-id");
+        const title = btn.getAttribute("data-title");
+        const amount = btn.getAttribute("data-amount");
+
+        currentRejectRequest = { id, title, amount };
+
+        document.getElementById("rejectRequestId").textContent = id;
+        document.getElementById("rejectRequestTitle").textContent = title || "-";
+        document.getElementById("rejectRequestAmount").textContent =
+          amount ? fmtBaht(amount) + " บาท" : "-";
+        document.getElementById("rejectNote").value = "";
+
+        showRejectModal();
+      });
+    });
+  }
+
+  async function doAction(id, newStatus, note) {
+    try {
+      const res = await fetch(`${BASE}/api/requests/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token
+        },
+        body: JSON.stringify({ status: newStatus, note })
+      });
+      const data = await res.json().catch(()=> ({}));
+      if (!res.ok) throw new Error(data.error || "อัปเดตสถานะไม่สำเร็จ");
+
+      await loadPending();
+    } catch (e) {
+      alert("เกิดข้อผิดพลาด: " + e.message);
+    }
+  }
+
+  // ===== Modal รายละเอียด =====
+  const modal = document.getElementById("detailModal");
+  const closeBtn = document.getElementById("detailClose");
+  function showModal(){ modal.classList.add("show"); }
+  function hideModal(){ modal.classList.remove("show"); }
+  closeBtn.addEventListener("click", hideModal);
+  modal.addEventListener("click", (e)=>{ if(e.target === modal) hideModal(); });
+
+  // ===== Modal ไม่อนุมัติ =====
+  const rejectModal = document.getElementById("rejectModal");
+  const rejectClose = document.getElementById("rejectModalClose");
+  const rejectCancel = document.getElementById("rejectCancel");
+  const rejectSubmit = document.getElementById("rejectSubmit");
+  const rejectNote = document.getElementById("rejectNote");
+
+  function showRejectModal() {
+    rejectModal.classList.add("show");
+    rejectNote.focus();
+  }
+  function hideRejectModal() {
+    rejectModal.classList.remove("show");
+    currentRejectRequest = null;
+  }
+  rejectClose.addEventListener("click", hideRejectModal);
+  rejectCancel.addEventListener("click", hideRejectModal);
+
+  rejectSubmit.addEventListener("click", async () => {
+    if (!currentRejectRequest) return;
+    const note = rejectNote.value.trim();
+    await doAction(currentRejectRequest.id, STATUS_REJECTED, note);
+    hideRejectModal();
+  });
+
+  rejectModal.addEventListener("click", (e) => {
+    if (e.target === rejectModal) hideRejectModal();
+  });
+
+  rejectNote.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.ctrlKey) {
+      e.preventDefault();
+      rejectSubmit.click();
+    }
+  });
+
+  async function openDetailModal(id){
+    try{
+      const res = await fetch(`${BASE}/api/requests/${encodeURIComponent(id)}/timeline`, {
+        headers: { Authorization: "Bearer " + token }
+      });
+      const data = await res.json().catch(()=> ({}));
+      if(!res.ok) throw new Error(data.error || "โหลดรายละเอียดไม่สำเร็จ");
+
+      const r  = data.request || {};
+      const tl = Array.isArray(data.timeline) ? data.timeline : [];
+
+      document.getElementById("d-id").textContent     = r.id || "-";
+      document.getElementById("d-school").textContent = r.school || "-";
+      document.getElementById("d-title").textContent  = r.title || "-";
+      document.getElementById("d-amount").textContent = r.amount ? fmtBaht(r.amount)+" บาท" : "-";
+      document.getElementById("d-status").textContent = mapStatusLabel(r.status);
+      document.getElementById("d-desc").textContent   = r.description || "-";
+
+      const tb = document.getElementById("d-timeline-body");
+
+      // ✅ เรียงล่าสุดอยู่บนสุด
+      const sortedTimeline = [...tl].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      // ✅ ไม่มีคำว่า “ล่าสุด” แล้ว แต่ทำแถวบนสุดเด่นขึ้นแทน
+      tb.innerHTML = sortedTimeline.map((row, idx) => {
+        const isLatest = idx === 0;
+
+        const statusClass = row.action
+          ? `status-${String(row.action).toLowerCase()}`
+          : "";
+
+        return `
+          <tr class="${isLatest ? 'timeline-latest ' + statusClass : ''}">
+            <td>${mapStatusLabel(row.action || '-')}</td>
+            <td class="tl-one-line">${roleLabel(row.actor_role)}</td>
+            <td class="tl-one-line">${row.note ? row.note : '-'}</td>
+            <td>${fmtDateTime(row.created_at)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      showModal();
+    }catch(e){
+      alert("เกิดข้อผิดพลาด: " + e.message);
+    }
+  }
+
+  (async function start(){
+    await initAuth();
+    initSidebar();
+    await loadPending();
+  })();
+</script>
+</body>
+</html>

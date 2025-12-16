@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>พนักงานโรงเรียน – ส่งคำขอเบิก</title>
+
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/employee.css">
+
+  <!-- กล่องแจ้งเตือนตรงกลาง -->
+  <style>
+    .center-alert-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+    }
+    .center-alert-box{
+      background:#ffffff;
+      border-radius:18px;
+      padding:24px 28px;
+      max-width:360px;
+      width:90%;
+      box-shadow:0 20px 40px rgba(15,23,42,.25);
+      text-align:center;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    }
+    .center-alert-title{
+      font-size:18px;
+      font-weight:700;
+      margin-bottom:6px;
+      color:#0f172a;
+    }
+    .center-alert-message{
+      font-size:14px;
+      color:#4b5563;
+      margin-bottom:16px;
+      white-space:pre-line; /* ให้ \n เป็นขึ้นบรรทัดใหม่ได้ */
+    }
+    .center-alert-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:8px 22px;
+      border-radius:999px;
+      border:none;
+      background:#0ea5e9;
+      color:#ffffff;
+      font-weight:600;
+      font-size:14px;
+      cursor:pointer;
+    }
+    .center-alert-btn:focus{
+      outline:2px solid #bae6fd;
+      outline-offset:2px;
+    }
+
+    /* CSS สำหรับฟอร์มตรวจสอบ */
+    .form-error {
+      color: #dc2626;
+      font-size: 13px;
+      margin-top: 4px;
+      display: none;
+      font-weight: 500;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    input.error, textarea.error {
+      border-color: #dc2626 !important;
+      background-color: #fef2f2;
+    }
+
+    /* สไตล์สำหรับข้อความแจ้งเตือนจำนวนบัญชี */
+    .account-limit-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      font-size: 13px;
+    }
+
+    .account-limit-info .limit-badge {
+      background: #d90902;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+  </style>
+
+  <script>
+    window.BACKEND_URL = "http://localhost/school_api/public";
+  </script>
+</head>
+<body>
+<header>
+  <div class="wrap row" style="justify-content:space-between">
+    <div>
+      <h1>พนักงานโรงเรียน</h1>
+      <div class="subtitle">สร้างคำขอเบิกค่าใช้จ่าย (ส่งไปยังผู้อำนวยการ)</div>
+    </div>
+    <div class="nav" id="navUser">
+      <span class="status" id="who"></span>
+      <a class="btn" href="#" id="logout">ออกจากระบบ</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap emp-layout" id="empLayout">
+  <!-- ปุ่มเปิด/ปิดเมนู (บนมือถือ / desktop) -->
+  <button class="sidebar-toggle" id="sidebarToggle">☰ เมนู</button>
+
+  <!-- เมนูด้านข้าง -->
+  <aside class="emp-sidebar" id="empSidebar">
+    <div class="emp-sidebar-header">
+      <div class="emp-sidebar-title">เมนูพนักงาน</div>
+      <div class="emp-sidebar-sub">จัดการคำขอและข้อมูลการเงิน</div>
+    </div>
+    <nav class="emp-nav">
+      <button class="emp-nav-item is-active" data-view="requests">
+        📄 คำขอเบิกค่าใช้จ่าย
+      </button>
+      <button class="emp-nav-item" data-view="finance">
+        💰 เกี่ยวกับการเงิน
+      </button>
+      <button class="emp-nav-item" data-view="credit">
+        ⭐ เครดิต
+      </button>
+    </nav>
+  </aside>
+
+  <!-- เนื้อหาหลัก -->
+  <section class="emp-main">
+    <!-- View 1: คำขอเบิกค่าใช้จ่าย -->
+    <section id="view-requests" class="emp-view is-active">
+      <!-- ฟอร์มส่งคำขอ -->
+      <div class="card">
+        <!-- แถบโชว์เครดิตโรงเรียน -->
+        <div style="
+          display:flex;
+          flex-wrap:wrap;
+          gap:8px;
+          align-items:center;
+          margin-bottom:12px;
+          padding:10px 12px;
+          border-radius:10px;
+          background:#eff6ff;
+          border:1px solid #bfdbfe;
+        ">
+          <span style="font-weight:600;">เครดิตคงเหลือของโรงเรียน:</span>
+          <span id="req-credit-balance" style="font-size:18px;font-weight:800;color:#1d4ed8;">-</span>
+          <span style="font-weight:500;">เครดิต</span>
+        </div>
+
+        <div class="grid g2">
+          <div>
+            <label>หัวข้อรายการ</label>
+            <input id="title" placeholder="เช่น เบิกค่าอุปกรณ์การสอน" />
+            <div id="title-error" class="form-error">กรุณากรอกหัวข้อรายการ</div>
+          </div>
+          <div>
+            <label>จำนวนเงิน (บาท)</label>
+            <input id="amount" type="number" min="0" step="1" placeholder="เช่น 1000" />
+            <div id="amount-error" class="form-error">กรุณากรอกจำนวนเงิน</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <label>รายละเอียด</label>
+          <textarea id="desc" placeholder="แนบรายละเอียดประกอบ"></textarea>
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <button id="btnSubmit" class="ok">ยืนยัน</button>
+        </div>
+      </div>
+
+      <!-- ตารางคำขอของฉัน -->
+      <div class="card">
+        <h3>คำขอของฉัน</h3>
+        <table id="myTable" style="margin-top:8px">
+          <thead>
+            <tr>
+              <th>รหัส</th>
+              <th>หัวข้อ</th>
+              <th>จำนวน</th>
+              <th>สถานะ</th>
+              <th>รายละเอียด / ยื่นอีกครั้ง</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- View 2: เกี่ยวกับการเงิน -->
+    <section id="view-finance" class="emp-view">
+      <!-- ยอดเงินคงเหลือรวม -->
+      <div class="card">
+        <h3>ยอดเงินคงเหลือรวมในระบบ</h3>
+        <p class="emp-note">แสดงยอดรวมจากบัญชีที่ผูกไว้ทั้งหมด</p>
+        <div id="fin-balance" style="font-size:24px;font-weight:800;color:#0369a1;">
+          - (กำลังโหลด...)
+        </div>
+      </div>
+
+      <!-- บัญชีธนาคารของโรงเรียน -->
+      <div class="card">
+        <h3>บัญชีธนาคารของโรงเรียน</h3>
+        
+        <!-- แจ้งเตือนเกี่ยวกับจำนวนบัญชี -->
+        <div class="account-limit-info">
+          <span class="limit-badge">จำกัด</span>
+          <span>สามารถเพิ่มบัญชีธนาคารได้สูงสุด 2 บัญชีเท่านั้น</span>
+        </div>
+        
+        <p class="emp-note">
+          บัญชีเหล่านี้คือบัญชีปลายทางที่จะโอนเงินเข้ามาให้โรงเรียน
+        </p>
+        <table style="margin-top:8px">
+          <thead>
+            <tr>
+              <th>ชื่อบัญชี</th>
+              <th>ธนาคาร</th>
+              <th>เลขที่บัญชี</th>
+              <th>ยอดเงินล่าสุด</th>
+            </tr>
+          </thead>
+          <tbody id="fin-accounts-body">
+            <tr><td colspan="4">- ยังไม่มีข้อมูลบัญชี -</td></tr>
+          </tbody>
+        </table>
+
+        <!-- ฟอร์มเพิ่มบัญชี -->
+        <hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb;">
+        <h4 style="margin-top:0;">เพิ่มบัญชีธนาคารใหม่</h4>
+        <form id="fin-account-form" class="grid g2" style="margin-top:8px;gap:12px;">
+          <div>
+            <label>ชื่อบัญชี</label>
+            <input id="fin-account-name" placeholder="เช่น โรงเรียนตัวอย่าง" />
+          </div>
+          <div>
+            <label>ธนาคาร</label>
+            <input id="fin-bank-name" placeholder="เช่น กสิกรไทย, กรุงไทย" />
+          </div>
+          <div>
+            <label>เลขที่บัญชี</label>
+            <input id="fin-account-number" placeholder="เช่น 123-4-56789-0" />
+          </div>
+          <div class="row" style="align-items:flex-end;gap:8px;">
+            <button type="submit" id="fin-add-account-btn" class="ok">
+              + เพิ่มบัญชีธนาคาร
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- ประวัติการโอนเงิน -->
+      <div class="card">
+        <h2>ประวัติการโอนเงิน</h2>
+        <p class="emp-note">
+          แสดงรายการบันทึกการโอนเงิน
+        </p>
+        <table style="margin-top:8px">
+          <thead>
+            <tr>
+              <th>เวลา</th>
+              <th>จำนวนเงิน</th>
+              <th>ธนาคาร / เลขที่บัญชี</th>
+              <th>หมายเหตุ</th>
+            </tr>
+          </thead>
+          <tbody id="fin-transfers-body">
+            <tr><td colspan="4">- ยังไม่มีประวัติการโอน -</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- View 3: เครดิต -->
+    <section id="view-credit" class="emp-view">
+      <!-- กล่องแสดงเครดิต + เติมเครดิต -->
+      <div class="card">
+        <h3>เครดิตของโรงเรียน</h3>
+        <p class="emp-note">
+          เครดิตนี้ใช้ตรวจสอบก่อนยื่นคำขอเบิกเงิน 
+        </p>
+
+        <div style="margin:12px 0;padding:12px 16px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;display:flex;align-items:center;gap:8px;">
+          <span style="font-weight:600;">เครดิตคงเหลือ:</span>
+          <span id="credit-balance" style="font-size:22px;font-weight:800;color:#1d4ed8;">-</span>
+          <span style="font-weight:500;">เครดิต</span>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label for="credit-topup-amount">เติมเครดิต</label>
+          <div class="row" style="gap:8px;margin-top:4px;align-items:center;">
+            <input type="number" id="credit-topup-amount" min="1" step="1" placeholder="จำนวนเครดิตที่ต้องการเติม" />
+            <button type="button" id="credit-topup-btn" class="ok">เติมเครดิต</button>
+          </div>
+          <p id="credit-message" class="emp-note" style="margin-top:8px;"></p>
+        </div>
+      </div>
+    </section>
+  </section>
+</main>
+
+<!-- Modal รายละเอียด + Timeline -->
+<div id="detailModal" class="modal-backdrop">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>รายละเอียดคำขอ</h3>
+      <button class="modal-close" id="detailClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-section-title">ข้อมูลคำขอ</div>
+      <div class="detail-grid">
+        <div class="detail-label">รหัสคำขอ</div>
+        <div class="detail-value" id="d-id">-</div>
+
+        <div class="detail-label">โรงเรียน</div>
+        <div class="detail-value" id="d-school">-</div>
+
+        <div class="detail-label">หัวข้อ</div>
+        <div class="detail-value" id="d-title">-</div>
+
+        <div class="detail-label">จำนวนเงิน</div>
+        <div class="detail-value" id="d-amount">-</div>
+
+        <div class="detail-label">สถานะล่าสุด</div>
+        <div class="detail-value">
+          <span class="tag-status" id="d-status">-</span>
+        </div>
+
+        <div class="detail-label">รายละเอียด</div>
+        <div class="detail-value" id="d-desc">-</div>
+      </div>
+
+      <div class="detail-section-title">ประวัติสถานะ (Timeline)</div>
+      <table class="timeline-table">
+        <thead>
+          <tr>
+            <th>สถานะ</th>
+            <th>บทบาท</th>
+            <th>หมายเหตุ</th>
+            <th>เวลา</th>
+          </tr>
+        </thead>
+        <tbody id="d-timeline-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal แก้ไขคำขอ/ยื่นอีกครั้ง -->
+<div id="editModal" class="modal-backdrop">
+  <div class="modal-box edit-modal-box">
+    <div class="modal-header">
+      <h3>แก้ไขคำขอ &amp; ยื่นอีกครั้ง</h3>
+      <button class="modal-close" id="editClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-section-title">ข้อมูลคำขอ</div>
+      <div class="detail-grid">
+        <div class="detail-label">รหัสคำขอ</div>
+        <div class="detail-value" id="e-id">-</div>
+
+        <div class="detail-label">หัวข้อ</div>
+        <div class="detail-value">
+          <input id="e-title" />
+        </div>
+
+        <div class="detail-label">จำนวนเงิน (บาท)</div>
+        <div class="detail-value">
+          <input id="e-amount" type="number" min="0" step="1" />
+        </div>
+
+        <div class="detail-label">รายละเอียด</div>
+        <div class="detail-value">
+          <textarea id="e-desc" rows="4"></textarea>
+        </div>
+
+        <div class="detail-label">หมายเหตุส่งอีกครั้ง</div>
+        <div class="detail-value">
+          <input id="e-note" placeholder="เช่น ยื่นคำขออีกครั้งหลังแก้ไขข้อมูลแล้ว" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:12px; justify-content:flex-end; gap:8px;">
+        <button type="button" class="ghost" id="editCancel">ยกเลิก</button>
+        <button type="button" class="ok" id="editSave">บันทึก &amp; ยื่นอีกครั้ง</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- กล่องแจ้งเตือนตรงกลาง -->
+<div id="centerAlert" class="center-alert-backdrop">
+  <div class="center-alert-box">
+    <div class="center-alert-title" id="centerAlertTitle">แจ้งเตือน</div>
+    <div class="center-alert-message" id="centerAlertMessage">ข้อความแจ้งเตือน</div>
+    <button id="centerAlertOk" class="center-alert-btn">ตกลง</button>
+  </div>
+</div>
+
+<script src="assets/js/common.js"></script>
+<script>
+  const BASE  = window.BACKEND_URL || "http://localhost/school_api/public";
+  const token = localStorage.getItem("jwt_token");
+  if (!token) location.href = "index.html";
+
+  // ==== STATUS CODES ====
+  const STATUS_PENDING  = "Pending";
+  const STATUS_APPROVED = "Approved";
+  const STATUS_REJECTED = "Rejected";
+  const STATUS_REVIEWED = "Reviewed";
+
+  // จำนวนบัญชีสูงสุดที่อนุญาต
+  const MAX_BANK_ACCOUNTS = 2;
+
+  function roleLabel(role){
+    switch(role){
+      case 'employee':      return 'พนักงานโรงเรียน';
+      case 'director':      return 'ผู้อำนวยการ';
+      case 'icorp-staff':   return 'พนักงาน ICORP';
+      case 'icorp-manager': return 'ผู้จัดการ ICORP';
+      default:              return role || '-';
+    }
+  }
+
+  function mapStatusLabel(s){
+    switch(s){
+      case STATUS_PENDING:  return "Pending";
+      case STATUS_APPROVED: return "Approved";
+      case STATUS_REJECTED: return "Rejected";
+      case STATUS_REVIEWED: return "Reviewed";
+      default:              return s || "-";
+    }
+  }
+
+  function mapStatusClass(s){
+    switch(s){
+      case STATUS_PENDING:  return "status-pending";
+      case STATUS_APPROVED: return "status-approved";
+      case STATUS_REJECTED: return "status-rejected";
+      case STATUS_REVIEWED: return "status-reviewed";
+      default:              return "";
+    }
+  }
+
+  function fmtBaht(n){
+    try { return Number(n).toLocaleString('th-TH',{minimumFractionDigits:0}); }
+    catch { return n; }
+  }
+  function fmtDateTime(str){
+    if(!str) return '-';
+    try{
+      const d = new Date(str);
+      return d.toLocaleString('th-TH');
+    }catch(e){ return str; }
+  }
+
+  async function verifyMe(){
+    const url = `${BASE}/api/auth/me?token=${encodeURIComponent(token)}`;
+    const res = await fetch(url, { headers:{Authorization:"Bearer "+token} });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok || !data.profile) throw new Error("verify-failed");
+    return data.profile;
+  }
+
+  function bindLogout(){
+    const lg = document.getElementById("logout");
+    if(!lg) return;
+    lg.addEventListener("click", e=>{
+      e.preventDefault();
+      localStorage.removeItem("jwt_token");
+      localStorage.removeItem("icr_session_v1");
+      location.href = "index.html";
+    });
+  }
+
+  // ===== ฟังก์ชันแจ้งเตือนตรงกลาง =====
+  function showCenterAlert(options = {}){
+    const title   = options.title   || "แจ้งเตือน";
+    const message = options.message || "";
+    const onClose = typeof options.onClose === "function" ? options.onClose : null;
+
+    const wrap   = document.getElementById("centerAlert");
+    const tEl    = document.getElementById("centerAlertTitle");
+    const mEl    = document.getElementById("centerAlertMessage");
+    const okBtn  = document.getElementById("centerAlertOk");
+
+    if(!wrap || !tEl || !mEl || !okBtn){
+      // fallback ถ้า element ไม่มีจริง
+      alert(message || title);
+      if(onClose) onClose();
+      return;
+    }
+
+    tEl.textContent = title;
+    mEl.textContent = message;
+
+    wrap.style.display = "flex";
+
+    const closeHandler = () => {
+      wrap.style.display = "none";
+      okBtn.removeEventListener("click", closeHandler);
+      wrap.removeEventListener("click", backdropHandler);
+      if(onClose) onClose();
+    };
+
+    const backdropHandler = (e) => {
+      if(e.target === wrap) closeHandler();
+    };
+
+    okBtn.addEventListener("click", closeHandler);
+    wrap.addEventListener("click", backdropHandler);
+  }
+
+  // ===== ฟังก์ชันตรวจสอบฟอร์ม =====
+  function initFormValidation() {
+    const titleInput = document.getElementById('title');
+    const amountInput = document.getElementById('amount');
+    
+    // ฟังก์ชันแสดงข้อผิดพลาด
+    function showError(inputId, message) {
+      const errorEl = document.getElementById(inputId + '-error');
+      if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+      }
+      const inputEl = document.getElementById(inputId);
+      if (inputEl) {
+        inputEl.classList.add('error');
+      }
+    }
+    
+    // ฟังก์ชันซ่อนข้อผิดพลาด
+    function hideError(inputId) {
+      const errorEl = document.getElementById(inputId + '-error');
+      if (errorEl) {
+        errorEl.style.display = 'none';
+      }
+      const inputEl = document.getElementById(inputId);
+      if (inputEl) {
+        inputEl.classList.remove('error');
+      }
+    }
+    
+    // เพิ่ม event listener สำหรับ real-time validation (เฉพาะหัวข้อและจำนวนเงิน)
+    titleInput.addEventListener('input', function() {
+      if (this.value.trim()) {
+        hideError('title');
+      }
+    });
+    
+    amountInput.addEventListener('input', function() {
+      const amount = parseFloat(this.value);
+      if (amount && amount > 0) {
+        hideError('amount');
+      }
+    });
+  }
+
+  let allRequests = [];
+  let editingRequest = null;
+  let currentAccounts = []; // เก็บข้อมูลบัญชีปัจจุบัน
+
+  async function loadMyRequests(){
+    const r = await fetch(`${BASE}/api/requests`, {
+      headers:{Authorization:"Bearer "+token}
+    });
+    if(r.status === 401){
+      localStorage.removeItem("jwt_token");
+      localStorage.removeItem("icr_session_v1");
+      location.href = "index.html";
+      return;
+    }
+    const j = await r.json();
+    const items = Array.isArray(j.items) ? j.items : [];
+    allRequests = items;
+
+    const tb = document.querySelector("#myTable tbody");
+    tb.innerHTML = items.map(row => `
+      <tr>
+        <td class="mono">${row.id}</td>
+        <td>${row.title ?? '-'}</td>
+        <td>${fmtBaht(Number(row.amount || 0))}</td>
+        <td>
+          <span class="status ${mapStatusClass(row.status)}">
+            ${mapStatusLabel(row.status)}
+          </span>
+        </td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn-link" data-detail-id="${row.id}">ดูรายละเอียด</button>
+            ${row.status === STATUS_REJECTED
+              ? `<button class="btn-retry" data-retry-id="${row.id}">ยื่นอีกครั้ง</button>`
+              : ""}
+          </div>
+        </td>
+      </tr>
+    `).join("");
+
+    tb.querySelectorAll("button[data-detail-id]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.getAttribute("data-detail-id");
+        openDetailModal(id);
+      });
+    });
+
+    tb.querySelectorAll("button[data-retry-id]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-retry-id");
+        const req = allRequests.find(r => String(r.id) === String(id));
+        if (!req) {
+          showCenterAlert({
+            title: "ไม่พบข้อมูล",
+            message: "ไม่พบข้อมูลคำขอ"
+          });
+          return;
+        }
+        openEditModal(req);
+      });
+    });
+  }
+
+  // ===== ดึงเครดิตมาโชว์ในหน้า "คำขอเบิก" =====
+  async function loadCreditSummaryForRequest(){
+    const balEl = document.getElementById("req-credit-balance");
+    if(!balEl) return;
+    balEl.textContent = "กำลังโหลด...";
+    delete balEl.dataset.raw;
+
+    try{
+      const res = await fetch(`${BASE}/api/finance/credits`, {
+        headers:{ Authorization:"Bearer "+token }
+      });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok || !data.ok){
+        throw new Error(data.error || "โหลดเครดิตไม่สำเร็จ");
+      }
+      const bal = Number(data.balance ?? 0);
+      balEl.textContent = fmtBaht(bal);
+      balEl.dataset.raw = String(bal);
+    }catch(e){
+      balEl.textContent = "-";
+    }
+  }
+
+  function wireCreditSummaryBar(){
+    const btn = document.getElementById("req-credit-refresh");
+    if(!btn) return;
+    btn.addEventListener("click", ()=>{
+      loadCreditSummaryForRequest();
+    });
+  }
+
+  function wireForm(){
+    const btn = document.getElementById("btnSubmit");
+    btn.addEventListener("click", async ()=>{
+      const title  = document.getElementById("title").value.trim();
+      const amount = Number(document.getElementById("amount").value);
+      const desc   = document.getElementById("desc").value.trim();
+
+      // ตรวจสอบฟอร์มก่อน - เฉพาะหัวข้อและจำนวนเงินเท่านั้น
+      let isValid = true;
+      
+      // ตรวจสอบหัวข้อ (จำเป็น)
+      if (!title) {
+        document.getElementById('title-error').style.display = 'block';
+        document.getElementById('title').classList.add('error');
+        isValid = false;
+      }
+      
+      // ตรวจสอบจำนวนเงิน (จำเป็น)
+      if (!amount || amount <= 0) {
+        document.getElementById('amount-error').style.display = 'block';
+        document.getElementById('amount').classList.add('error');
+        isValid = false;
+      }
+      
+      // ไม่ตรวจสอบรายละเอียด (ไม่จำเป็น)
+      
+      if (!isValid) {
+        // ไม่แสดงกล่องแจ้งเตือนตรงกลาง ให้แสดงเฉพาะข้อความสีแดงใต้ฟิลด์
+        return;
+      }
+
+      btn.disabled = true;
+
+      // 1) เช็คเครดิตของโรงเรียนก่อน
+      try{
+        const resCredit = await fetch(`${BASE}/api/finance/credits`, {
+          headers:{ Authorization:"Bearer "+token }
+        });
+        const creditData = await resCredit.json().catch(()=>({}));
+        if(resCredit.ok && creditData.ok){
+          const bal = Number(creditData.balance ?? 0);
+          const smallEl = document.getElementById("req-credit-balance");
+          if(smallEl){
+            smallEl.textContent = fmtBaht(bal);
+            smallEl.dataset.raw = String(bal);
+          }
+
+          if(bal < amount){
+            showCenterAlert({
+              title:"เครดิตไม่เพียงพอ",
+              message:
+                "เครดิตของโรงเรียนไม่พอสำหรับคำขอเบิกนี้\n" +
+                "เครดิตคงเหลือ: " + fmtBaht(bal) + " เครดิต\n" +
+                "จำนวนที่ขอเบิก: " + fmtBaht(amount) + " บาท"
+            });
+            btn.disabled = false;
+            return;
+          }
+        }
+        // ถ้าโหลดเครดิตไม่สำเร็จ ปล่อยให้ backend เช็คต่อ
+      }catch(e){
+        // ignore เพื่อให้ backend เป็นตัวตัดสิน
+      }
+
+      // 2) ถ้าเครดิตพอ หรือเช็คไม่ได้ → ยิงคำขอตามเดิม (backend ยังเช็คซ้ำอยู่)
+      try{
+        const res = await fetch(`${BASE}/api/requests`, {
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json",
+            Authorization:"Bearer "+token
+          },
+          body:JSON.stringify({
+            school:"โรงเรียนตัวอย่าง",
+            title,
+            amount,
+            desc
+          })
+        });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok || !data.ok){
+          // กรณี backend ตอบว่าเครดิตไม่พอ หรือ error อื่น
+          throw new Error(data.error || "ส่งคำขอไม่สำเร็จ");
+        }
+
+        document.getElementById("title").value   = "";
+        document.getElementById("amount").value  = "";
+        document.getElementById("desc").value    = "";
+        await loadMyRequests();
+
+        // ใช้กล่องแจ้งเตือนตรงกลางแทน alert เดิม
+        showCenterAlert({
+          title:"สำเร็จ",
+          message:"ส่งคำขอเรียบร้อย!"
+        });
+      }catch(err){
+        showCenterAlert({
+          title:"เกิดข้อผิดพลาด",
+          message:"เกิดข้อผิดพลาด: " + err.message
+        });
+      }finally{
+        btn.disabled = false;
+      }
+    });
+  }
+
+  // ===== Modal รายละเอียด =====
+  const modal   = document.getElementById("detailModal");
+  const closeBtn= document.getElementById("detailClose");
+  function showModal(){ modal.classList.add("show"); }
+  function hideModal(){ modal.classList.remove("show"); }
+
+  closeBtn.addEventListener("click", hideModal);
+  modal.addEventListener("click", e=>{ if(e.target===modal) hideModal(); });
+
+  async function openDetailModal(id){
+  try{
+    const res = await fetch(`${BASE}/api/requests/${encodeURIComponent(id)}/timeline`, {
+      headers:{ Authorization:"Bearer "+token }
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error || "โหลดรายละเอียดไม่สำเร็จ");
+
+    const r  = data.request || {};
+    const tl = Array.isArray(data.timeline) ? data.timeline : [];
+
+    // ---------- เติมข้อมูลส่วนหัว ----------
+    document.getElementById("d-id").textContent     = r.id || "-";
+    document.getElementById("d-school").textContent = r.school || "-";
+    document.getElementById("d-title").textContent  = r.title || "-";
+    document.getElementById("d-amount").textContent =
+      r.amount ? fmtBaht(r.amount) + " บาท" : "-";
+    document.getElementById("d-status").textContent =
+      mapStatusLabel(r.status);
+    document.getElementById("d-desc").textContent   =
+      r.description || "-";
+
+    const tb = document.getElementById("d-timeline-body");
+
+    // ---------- เรียง timeline: ล่าสุดอยู่บนสุด ----------
+    const sortedTimeline = [...tl].sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
+
+    // ---------- render timeline ----------
+    tb.innerHTML = sortedTimeline.map((row, idx) => {
+      const isLatest = idx === 0;
+
+      const statusClass = row.action
+        ? `status-${row.action.toLowerCase()}`
+        : "";
+
+      return `
+        <tr class="${isLatest ? 'timeline-latest ' + statusClass : ''}">
+          <td>${mapStatusLabel(row.action)}</td>
+          <td class="role">${roleLabel(row.actor_role)}</td>
+          <td >${row.note ? row.note : '-'}</td>
+          <td>${fmtDateTime(row.created_at)}</td>
+        </tr>
+      `;
+    }).join("");
+
+    showModal();
+  }catch(e){
+    alert("เกิดข้อผิดพลาด: " + e.message);
+  }
+}
+
+  // ===== Modal แก้ไข / ยื่นอีกครั้ง =====
+  const editModal   = document.getElementById("editModal");
+  const editClose   = document.getElementById("editClose");
+  const editCancel  = document.getElementById("editCancel");
+  const editSaveBtn = document.getElementById("editSave");
+
+  function showEditModal(){ editModal.classList.add("show"); }
+  function hideEditModal(){
+    editModal.classList.remove("show");
+    editingRequest = null;
+  }
+
+  editClose.addEventListener("click", hideEditModal);
+  editCancel.addEventListener("click", hideEditModal);
+  editModal.addEventListener("click", e=>{ if(e.target === editModal) hideEditModal(); });
+
+  function openEditModal(req){
+    editingRequest = req || null;
+    if(!editingRequest){
+      showCenterAlert({
+        title:"ไม่พบข้อมูล",
+        message:"ไม่พบข้อมูลคำขอ"
+      });
+      return;
+    }
+    document.getElementById("e-id").textContent = editingRequest.id || "-";
+    document.getElementById("e-title").value    = editingRequest.title || "";
+    document.getElementById("e-amount").value   = editingRequest.amount || "";
+    document.getElementById("e-desc").value     = editingRequest.description || "";
+    document.getElementById("e-note").value     = "ยื่นคำขออีกครั้งหลังแก้ไขข้อมูลแล้ว";
+
+    showEditModal();
+  }
+
+  editSaveBtn.addEventListener("click", async () => {
+    if(!editingRequest) {
+      showCenterAlert({
+        title:"ไม่พบข้อมูล",
+        message:"ไม่พบข้อมูลคำขอ"
+      });
+      return;
+    }
+
+    const newTitle  = document.getElementById("e-title").value.trim();
+    const newAmount = Number(document.getElementById("e-amount").value);
+    const newDesc   = document.getElementById("e-desc").value.trim();
+    const note      = document.getElementById("e-note").value.trim() || "ยื่นคำขออีกครั้ง";
+
+    if(!newTitle || !(newAmount > 0)){
+      showCenterAlert({
+        title:"ข้อมูลไม่ครบถ้วน",
+        message:"กรุณากรอกหัวข้อและจำนวนเงินให้ถูกต้อง"
+      });
+      return;
+    }
+
+    editSaveBtn.disabled = true;
+
+    try{
+      const res = await fetch(`${BASE}/api/requests/${encodeURIComponent(editingRequest.id)}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token
+        },
+        body: JSON.stringify({
+          status: STATUS_PENDING,
+          note,
+          title:  newTitle,
+          amount: newAmount,
+          desc:   newDesc
+        })
+      });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok || !data.ok){
+        throw new Error(data.error || "อัปเดตคำขอไม่สำเร็จ");
+      }
+
+      hideEditModal();
+      await loadMyRequests();
+      showCenterAlert({
+        title:"สำเร็จ",
+        message:"บันทึกและยื่นคำขออีกครั้งเรียบร้อย"
+      });
+    }catch(err){
+      showCenterAlert({
+        title:"เกิดข้อผิดพลาด",
+        message:"เกิดข้อผิดพลาด: " + err.message
+      });
+    }finally{
+      editSaveBtn.disabled = false;
+    }
+  });
+
+  // ===== Finance (Employee) =====
+  async function loadFinanceSummary(){
+    const el = document.getElementById("fin-balance");
+    if(!el) return;
+    el.textContent = "กำลังโหลด...";
+
+    try{
+      const res = await fetch(`${BASE}/api/finance/summary`, {
+        headers:{ Authorization:"Bearer "+token }
+      });
+      if(!res.ok) throw new Error("load-summary-failed");
+      const data = await res.json().catch(()=>({}));
+      const bal = data.total_balance ?? data.balance ?? 0;
+      el.textContent = fmtBaht(bal) + " บาท";
+    }catch(e){
+      el.textContent = "- (ยังไม่เชื่อม API / โหลดไม่สำเร็จ)";
+    }
+  }
+
+  async function loadFinanceAccounts(){
+    const tb = document.getElementById("fin-accounts-body");
+    if(!tb) return;
+    tb.innerHTML = `<tr><td colspan="4">กำลังโหลด...</td></tr>`;
+
+    try{
+      const res = await fetch(`${BASE}/api/finance/accounts`, {
+        headers:{ Authorization:"Bearer "+token }
+      });
+      if(!res.ok) throw new Error("load-accounts-failed");
+      const data = await res.json().catch(()=>({}));
+      const items = Array.isArray(data.items) ? data.items : [];
+      
+      // อัพเดทข้อมูลบัญชีปัจจุบัน
+      currentAccounts = items;
+
+      if(!items.length){
+        tb.innerHTML = `<tr><td colspan="4">- ยังไม่มีข้อมูลบัญชี -</td></tr>`;
+        return;
+      }
+
+      tb.innerHTML = items.map(acc => `
+        <tr>
+          <td>${acc.account_name || '-'}</td>
+          <td>${acc.bank_name || '-'}</td>
+          <td>${acc.account_number || '-'}</td>
+          <td>${fmtBaht(acc.current_balance ?? 0)} บาท</td>
+        </tr>
+      `).join("");
+    }catch(e){
+      tb.innerHTML = `<tr><td colspan="4">โหลดบัญชีไม่สำเร็จ / ยังไม่เชื่อม API</td></tr>`;
+    }
+  }
+
+  async function loadFinanceTransfers(){
+    const tb = document.getElementById("fin-transfers-body");
+    if(!tb) return;
+    tb.innerHTML = `<tr><td colspan="4">กำลังโหลด...</td></tr>`;
+
+    try{
+      const res = await fetch(`${BASE}/api/finance/transfers`, {
+        headers:{ Authorization:"Bearer "+token }
+      });
+      if(!res.ok) throw new Error("load-transfers-failed");
+      const data = await res.json().catch(()=>({}));
+      const items = Array.isArray(data.items) ? data.items : [];
+
+      if(!items.length){
+        tb.innerHTML = `<tr><td colspan="4">- ยังไม่มีประวัติการโอน -</td></tr>`;
+        return;
+      }
+
+      tb.innerHTML = items.map(tr => `
+        <tr>
+          <td>${fmtDateTime(tr.created_at)}</td>
+          <td>${fmtBaht(tr.amount || 0)} บาท</td>
+          <td>${(tr.bank_name || '-') + ' / ' + (tr.account_number || '-')}</td>
+          <td>${tr.note || '-'}</td>
+        </tr>
+      `).join("");
+    }catch(e){
+      tb.innerHTML = `<tr><td colspan="4">โหลดประวัติการโอนไม่สำเร็จ / ยังไม่เชื่อม API</td></tr>`;
+    }
+  }
+
+  async function loadFinance(){
+    await Promise.all([
+      loadFinanceSummary(),
+      loadFinanceAccounts(),
+      loadFinanceTransfers()
+    ]).catch(()=>{});
+  }
+
+  function wireFinanceForm(){
+    const form = document.getElementById("fin-account-form");
+    if(!form) return;
+
+    form.addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      
+      // ตรวจสอบจำนวนบัญชีก่อน
+      if (currentAccounts.length >= MAX_BANK_ACCOUNTS) {
+        showCenterAlert({
+          title: "ไม่สามารถเพิ่มบัญชีได้",
+          message: `คุณมีบัญชีธนาคารครบจำนวนสูงสุด (${MAX_BANK_ACCOUNTS} บัญชี) แล้ว\n\nกรุณาลบบัญชีเก่าออกก่อนหากต้องการเพิ่มบัญชีใหม่`
+        });
+        return;
+      }
+
+      const accountName   = document.getElementById("fin-account-name").value.trim();
+      const bankName      = document.getElementById("fin-bank-name").value.trim();
+      const accountNumber = document.getElementById("fin-account-number").value.trim();
+
+      if(!accountName || !bankName || !accountNumber){
+        showCenterAlert({
+          title: "กรุณากรอกข้อมูลให้ครบถ้วน",
+          message: "โปรดกรอกชื่อบัญชี, ธนาคาร และเลขที่บัญชีให้ครบถ้วน"
+        });
+        return;
+      }
+
+      const btn = document.getElementById("fin-add-account-btn");
+      if(btn) btn.disabled = true;
+
+      try{
+        const res = await fetch(`${BASE}/api/finance/accounts`, {
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json",
+            Authorization:"Bearer "+token
+          },
+          body:JSON.stringify({
+            account_name:   accountName,
+            bank_name:      bankName,
+            account_number: accountNumber
+          })
+        });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok || data.ok === false){
+          throw new Error(data.error || "บันทึกบัญชีไม่สำเร็จ");
+        }
+
+        document.getElementById("fin-account-name").value   = "";
+        document.getElementById("fin-bank-name").value      = "";
+        document.getElementById("fin-account-number").value = "";
+
+        await loadFinanceAccounts();
+        
+        showCenterAlert({
+          title: "สำเร็จ",
+          message: "เพิ่มบัญชีธนาคารเรียบร้อย"
+        });
+      }catch(err){
+        showCenterAlert({
+          title: "เกิดข้อผิดพลาด",
+          message: "เกิดข้อผิดพลาดในการเพิ่มบัญชี: " + err.message
+        });
+      }finally{
+        if(btn) btn.disabled = false;
+      }
+    });
+  }
+
+  // ===== CREDIT (หน้าเมนูเครดิต) =====
+  async function loadCredit(){
+    const balEl = document.getElementById("credit-balance");
+    const msgEl = document.getElementById("credit-message");
+    if(!balEl) return;
+
+    balEl.textContent = "กำลังโหลด...";
+    if(msgEl) msgEl.textContent = "";
+
+    try{
+      const res = await fetch(`${BASE}/api/finance/credits`, {
+        headers:{ Authorization:"Bearer "+token }
+      });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok || !data.ok){
+        throw new Error(data.error || "โหลดเครดิตไม่สำเร็จ");
+      }
+      const bal = data.balance ?? 0;
+      balEl.textContent = fmtBaht(bal);
+    }catch(e){
+      balEl.textContent = "-";
+      if(msgEl){
+        msgEl.style.color = "#b91c1c";
+        msgEl.textContent = "โหลดเครดิตไม่สำเร็จ: " + e.message;
+      }
+    }
+  }
+
+  function wireCredit(){
+    const btn    = document.getElementById("credit-topup-btn");
+    const input  = document.getElementById("credit-topup-amount");
+    const msgEl  = document.getElementById("credit-message");
+    const balEl  = document.getElementById("credit-balance");
+    if(!btn || !input || !msgEl || !balEl) return;
+
+    btn.addEventListener("click", async ()=>{
+      const amount = parseFloat(input.value || "0");
+      msgEl.textContent = "";
+      msgEl.style.color = "#6b7280";
+
+      if(!(amount > 0)){
+        msgEl.style.color = "#b91c1c";
+        msgEl.textContent = "กรุณากรอกจำนวนเครดิตให้ถูกต้อง";
+        return;
+      }
+
+      btn.disabled = true;
+      try{
+        const res = await fetch(`${BASE}/api/finance/credits/topup`, {
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json",
+            Authorization:"Bearer "+token
+          },
+          body: JSON.stringify({ amount })
+        });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok || !data.ok){
+          throw new Error(data.error || "เติมเครดิตไม่สำเร็จ");
+        }
+
+        const bal = data.balance ?? 0;
+        balEl.textContent = fmtBaht(bal);
+        input.value = "";
+        msgEl.style.color = "#0f766e";
+        msgEl.textContent = "เติมเครดิตสำเร็จ";
+      }catch(e){
+        msgEl.style.color = "#b91c1c";
+        msgEl.textContent = "เกิดข้อผิดพลาด: " + e.message;
+      }finally{
+        btn.disabled = false;
+      }
+    });
+  }
+
+  // ===== Sidebar / เมนูสลับ section =====
+  function initSidebar(){
+    const layout   = document.getElementById("empLayout");
+    const toggle   = document.getElementById("sidebarToggle");
+    const navItems = document.querySelectorAll(".emp-nav-item");
+    const views    = document.querySelectorAll(".emp-view");
+
+    if(toggle && layout){
+      toggle.addEventListener("click", () => {
+        layout.classList.toggle("sidebar-open");
+      });
+    }
+
+    navItems.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const viewKey = btn.dataset.view;
+        navItems.forEach(b => b.classList.remove("is-active"));
+        btn.classList.add("is-active");
+
+        views.forEach(sec => {
+          sec.classList.toggle("is-active", sec.id === `view-${viewKey}`);
+        });
+
+        if(viewKey === "finance"){
+          loadFinance();
+        }else if(viewKey === "credit"){
+          loadCredit();
+        }else if(viewKey === "requests"){
+          loadCreditSummaryForRequest();
+        }
+
+        layout.classList.remove("sidebar-open");
+      });
+    });
+  }
+
+  // ===== Boot =====
+  (async function start(){
+    try{
+      const me = await verifyMe();
+      if(me.role !== "employee") throw new Error("role-mismatch");
+      localStorage.setItem("icr_session_v1", JSON.stringify(me));
+      document.getElementById("who").textContent = `${me.name} (${me.username})`;
+
+      bindLogout();
+      initSidebar();
+      wireForm();
+      initFormValidation(); // เรียกฟังก์ชันตรวจสอบฟอร์ม
+      wireFinanceForm();
+      wireCredit();
+      wireCreditSummaryBar();
+      await Promise.all([
+        loadMyRequests(),
+        loadCreditSummaryForRequest()
+      ]);
+    }catch(e){
+      localStorage.removeItem("jwt_token");
+      localStorage.removeItem("icr_session_v1");
+      location.href = "index.html";
+    }
+  })();
+</script>
+</body>
+</html>

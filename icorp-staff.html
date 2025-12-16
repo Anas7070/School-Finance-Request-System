@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ICORP Staff – ตรวจสอบคำขอ</title>
+
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/icorp-staff.css">
+
+  <script>
+    window.BACKEND_URL = "http://localhost/school_api/public";
+  </script>
+</head>
+<body>
+<header>
+  <div class="wrap row" style="justify-content:space-between">
+    <div>
+      <h1>ICORP Staff</h1>
+      <div class="subtitle">ตรวจสอบคำขอจากโรงเรียน ก่อนส่งต่อให้ผู้จัดการ ICORP</div>
+    </div>
+    <div class="nav" id="navUser">
+      <span class="status" id="who"></span>
+      <a class="btn" href="#" id="logout">ออกจากระบบ</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="card">
+    <h3>คำขอที่ต้องตรวจสอบ</h3>
+    <table id="staffTable" class="request-table" style="margin-top:8px">
+      <thead>
+        <tr>
+          <th>รหัส</th>
+          <th>โรงเรียน</th>
+          <th>หัวข้อ</th>
+          <th>จำนวน</th>
+          <th>สถานะ</th>
+          <th>รายละเอียด</th>
+          <th>ACTION</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- ✅ Modal รายละเอียด (ปรับให้เหมือน employee) -->
+<div id="detailModal" class="modal-backdrop">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>รายละเอียดคำขอ</h3>
+      <button class="modal-close" id="detailClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-section-title">ข้อมูลคำขอ</div>
+      <div class="detail-grid">
+        <div class="detail-label">รหัสคำขอ</div>
+        <div class="detail-value" id="d-id">-</div>
+
+        <div class="detail-label">โรงเรียน</div>
+        <div class="detail-value" id="d-school">-</div>
+
+        <div class="detail-label">หัวข้อ</div>
+        <div class="detail-value" id="d-title">-</div>
+
+        <div class="detail-label">จำนวนเงิน</div>
+        <div class="detail-value" id="d-amount">-</div>
+
+        <div class="detail-label">สถานะล่าสุด</div>
+        <div class="detail-value">
+          <span class="tag-status" id="d-status">-</span>
+        </div>
+
+        <div class="detail-label">รายละเอียด</div>
+        <div class="detail-value" id="d-desc">-</div>
+      </div>
+
+      <div class="detail-section-title">ประวัติสถานะ (Timeline)</div>
+      <table class="timeline-table">
+        <thead>
+          <tr>
+            <th>สถานะ</th>
+            <th>บทบาท</th>
+            <th>หมายเหตุ</th>
+            <th>เวลา</th>
+          </tr>
+        </thead>
+        <tbody id="d-timeline-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal ระบุเหตุผล (คงเดิม) -->
+<div id="noteModal" class="note-modal">
+  <div class="note-modal-box">
+    <div class="note-modal-header">
+      <h3 id="noteModalTitle">หมายเหตุการตรวจสอบ</h3>
+      <button class="note-modal-close" id="noteModalClose">&times;</button>
+    </div>
+    <div class="note-modal-content">
+      <div class="note-modal-info">
+        <p><strong>คำขอ:</strong> <span id="noteRequestTitle">-</span></p>
+        <p><strong>รหัส:</strong> <span id="noteRequestId" class="mono">-</span></p>
+        <p><strong>จำนวน:</strong> <span id="noteRequestAmount">-</span></p>
+      </div>
+
+      <label class="note-modal-label" id="noteModalLabel">
+        หมายเหตุการตรวจสอบ (ถ้ามี):
+      </label>
+      <textarea
+        id="noteTextarea"
+        class="note-modal-textarea"
+        placeholder="ระบุหมายเหตุ (ถ้ามี)..."
+      ></textarea>
+    </div>
+    <div class="note-modal-actions">
+      <button class="note-modal-btn note-modal-cancel" id="noteModalCancel">ยกเลิก</button>
+      <button class="note-modal-btn" id="noteModalSubmit" style="display: none;"></button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/common.js"></script>
+<script>
+  const BASE  = window.BACKEND_URL || "http://localhost/school_api/public";
+  const token = localStorage.getItem("jwt_token");
+  if (!token) location.href = "index.html";
+
+  const STATUS_PENDING  = "Pending";
+  const STATUS_VERIFIED = "Verified";
+  const STATUS_REVIEWED = "Reviewed";
+  const STATUS_APPROVED = "Approved";
+  const STATUS_REJECTED = "Rejected";
+
+  function roleLabel(role){
+    switch(role){
+      case 'employee':      return 'พนักงานโรงเรียน';
+      case 'director':      return 'ผู้อำนวยการ';
+      case 'icorp-staff':   return 'พนักงาน ICORP';
+      case 'icorp-manager': return 'ผู้จัดการ ICORP';
+      default:              return role || '-';
+    }
+  }
+
+  function mapStatusLabel(s){ return s || "-"; }
+
+  function mapStatusClass(s){
+    switch(s){
+      case STATUS_PENDING:  return "status-pending";
+      case STATUS_VERIFIED: return "status-reviewed";
+      case STATUS_REVIEWED: return "status-reviewed";
+      case STATUS_APPROVED: return "status-approved";
+      case STATUS_REJECTED: return "status-rejected";
+      default:              return "";
+    }
+  }
+
+  function fmtBaht(n){
+    try { return Number(n).toLocaleString('th-TH',{minimumFractionDigits:0}); }
+    catch { return n; }
+  }
+  function fmtDateTime(str){
+    if(!str) return '-';
+    try{ return new Date(str).toLocaleString('th-TH'); }catch(e){ return str; }
+  }
+
+  async function verifyMe(){
+    const url = `${BASE}/api/auth/me?token=${encodeURIComponent(token)}`;
+    const res = await fetch(url, { headers:{Authorization:"Bearer "+token} });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok || !data.profile) throw new Error("verify-failed");
+    return data.profile;
+  }
+
+  async function initAuth(){
+    try{
+      const me = await verifyMe();
+      if(me.role !== "icorp-staff") throw new Error("role-mismatch");
+      localStorage.setItem("icr_session_v1", JSON.stringify(me));
+      document.getElementById("who").textContent = `${me.name} (${me.username})`;
+
+      const lg = document.getElementById("logout");
+      if(lg) lg.addEventListener("click", e=>{
+        e.preventDefault();
+        localStorage.removeItem("jwt_token");
+        localStorage.removeItem("icr_session_v1");
+        location.href = "index.html";
+      });
+    }catch(e){
+      localStorage.removeItem("jwt_token");
+      localStorage.removeItem("icr_session_v1");
+      location.href = "index.html";
+    }
+  }
+
+  let currentActionRequest = null;
+  let currentActionType = null;
+
+  async function loadRequests(){
+    const r = await fetch(`${BASE}/api/requests`, {
+      headers:{Authorization:"Bearer "+token}
+    });
+    if(r.status === 401){
+      localStorage.removeItem("jwt_token");
+      localStorage.removeItem("icr_session_v1");
+      location.href = "index.html";
+      return;
+    }
+    const j = await r.json().catch(()=>({}));
+
+    // ✅ staff สนใจเฉพาะ Verified
+    const items = (j.items || []).filter(x => x.status === STATUS_VERIFIED);
+
+    const tb = document.querySelector("#staffTable tbody");
+    tb.innerHTML = items.map(row => `
+      <tr>
+        <td class="mono">${row.id}</td>
+        <td>${row.school ?? "-"}</td>
+        <td>${row.title ?? "-"}</td>
+        <td>${fmtBaht(Number(row.amount || 0))}</td>
+        <td>
+          <span class="status ${mapStatusClass(row.status)}">
+            ${mapStatusLabel(row.status)}
+          </span>
+        </td>
+        <td>
+          <button class="btn-link" data-detail-id="${row.id}">ดูรายละเอียด</button>
+        </td>
+        <td class="actions-cell">
+          <button class="ok" data-act="review" data-id="${row.id}" data-title="${row.title || ''}" data-amount="${row.amount || 0}">
+            ตรวจสอบแล้ว
+          </button>
+          <button class="cancel" data-act="cancel" data-id="${row.id}" data-title="${row.title || ''}" data-amount="${row.amount || 0}" style="margin-left:8px">
+            ยกเลิก
+          </button>
+        </td>
+      </tr>
+    `).join("");
+
+    tb.querySelectorAll("button[data-detail-id]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.getAttribute("data-detail-id");
+        openDetailModal(id);
+      });
+    });
+
+    tb.querySelectorAll("button[data-act='review']").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id  = btn.getAttribute("data-id");
+        const title = btn.getAttribute("data-title");
+        const amount = btn.getAttribute("data-amount");
+
+        currentActionRequest = { id, title, amount };
+        currentActionType = 'review';
+
+        showNoteModal('ตรวจสอบแล้ว', 'หมายเหตุการตรวจสอบ (ถ้ามี):');
+      });
+    });
+
+    tb.querySelectorAll("button[data-act='cancel']").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id  = btn.getAttribute("data-id");
+        const title = btn.getAttribute("data-title");
+        const amount = btn.getAttribute("data-amount");
+
+        currentActionRequest = { id, title, amount };
+        currentActionType = 'cancel';
+
+        showNoteModal('ยกเลิกคำขอ', 'หมายเหตุการยกเลิก (ถ้ามี):');
+      });
+    });
+  }
+
+  async function doAction(id, newStatus, note){
+    try{
+      const res = await fetch(`${BASE}/api/requests/${encodeURIComponent(id)}`, {
+        method:"PATCH",
+        headers:{
+          "Content-Type":"application/json",
+          Authorization:"Bearer "+token
+        },
+        body:JSON.stringify({ status:newStatus, note })
+      });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data.error || "อัปเดตสถานะไม่สำเร็จ");
+      await loadRequests();
+    }catch(e){
+      alert("เกิดข้อผิดพลาด: " + e.message);
+    }
+  }
+
+  // ===== Detail modal =====
+  const modal   = document.getElementById("detailModal");
+  const closeBtn= document.getElementById("detailClose");
+  function showModal(){ modal.classList.add("show"); }
+  function hideModal(){ modal.classList.remove("show"); }
+  closeBtn.addEventListener("click", hideModal);
+  modal.addEventListener("click", e=>{ if(e.target===modal) hideModal(); });
+
+  // ===== Note modal (คงเดิม) =====
+  const noteModal = document.getElementById("noteModal");
+  const noteModalClose = document.getElementById("noteModalClose");
+  const noteModalCancel = document.getElementById("noteModalCancel");
+  const noteModalSubmit = document.getElementById("noteModalSubmit");
+  const noteTextarea = document.getElementById("noteTextarea");
+
+  function showNoteModal(title, label) {
+    if (!currentActionRequest) return;
+
+    document.getElementById("noteModalTitle").textContent = title;
+    document.getElementById("noteModalLabel").textContent = label;
+
+    document.getElementById("noteRequestId").textContent = currentActionRequest.id;
+    document.getElementById("noteRequestTitle").textContent = currentActionRequest.title || "-";
+    document.getElementById("noteRequestAmount").textContent =
+      currentActionRequest.amount ? fmtBaht(currentActionRequest.amount) + " บาท" : "-";
+
+    noteTextarea.placeholder = (currentActionType === 'review')
+      ? "ระบุหมายเหตุการตรวจสอบ (ถ้ามี)..."
+      : "ระบุเหตุผลการยกเลิก (ถ้ามี)...";
+
+    noteTextarea.value = "";
+
+    noteModalSubmit.textContent = title;
+    noteModalSubmit.className = (currentActionType === 'review')
+      ? "note-modal-btn note-modal-ok"
+      : "note-modal-btn note-modal-reject";
+    noteModalSubmit.style.display = "inline-block";
+
+    noteModal.classList.add("show");
+    noteTextarea.focus();
+  }
+
+  function hideNoteModal() {
+    noteModal.classList.remove("show");
+    currentActionRequest = null;
+    currentActionType = null;
+  }
+
+  noteModalClose.addEventListener("click", hideNoteModal);
+  noteModalCancel.addEventListener("click", hideNoteModal);
+
+  noteModalSubmit.addEventListener("click", async () => {
+    if (!currentActionRequest || !currentActionType) return;
+
+    const note = noteTextarea.value.trim();
+
+    if (currentActionType === 'review') {
+      await doAction(currentActionRequest.id, STATUS_REVIEWED, note);
+    } else if (currentActionType === 'cancel') {
+      await doAction(currentActionRequest.id, STATUS_REJECTED, note);
+    }
+
+    hideNoteModal();
+  });
+
+  noteModal.addEventListener("click", (e) => {
+    if (e.target === noteModal) hideNoteModal();
+  });
+
+  noteTextarea.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.ctrlKey) {
+      e.preventDefault();
+      noteModalSubmit.click();
+    }
+  });
+
+  // ✅ ปรับให้เหมือน employee: sort ล่าสุดบนสุด + ไฮไลท์แถวล่าสุด + class role/status
+  async function openDetailModal(id){
+    try{
+      const res = await fetch(`${BASE}/api/requests/${encodeURIComponent(id)}/timeline`, {
+        headers:{Authorization:"Bearer "+token}
+      });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data.error || "โหลดรายละเอียดไม่สำเร็จ");
+
+      const r  = data.request || {};
+      const tl = Array.isArray(data.timeline) ? data.timeline : [];
+
+      document.getElementById("d-id").textContent     = r.id || "-";
+      document.getElementById("d-school").textContent = r.school || "-";
+      document.getElementById("d-title").textContent  = r.title || "-";
+      document.getElementById("d-amount").textContent = r.amount ? fmtBaht(r.amount)+" บาท" : "-";
+      document.getElementById("d-status").textContent = mapStatusLabel(r.status);
+      document.getElementById("d-desc").textContent   = r.description || "-";
+
+      const tb = document.getElementById("d-timeline-body");
+
+      // ✅ ล่าสุดอยู่บนสุด
+      const sortedTimeline = [...tl].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      tb.innerHTML = sortedTimeline.map((row, idx) => {
+        const isLatest = idx === 0;
+        const actionLower = String(row.action || "").toLowerCase();
+        const statusClass = actionLower ? `status-${actionLower}` : "";
+
+        return `
+          <tr class="${isLatest ? 'timeline-latest ' + statusClass : ''}">
+            <td>${mapStatusLabel(row.action || '-')}</td>
+            <td class="role">${roleLabel(row.actor_role)}</td>
+            <td class="tl-one-line">${row.note ? row.note : '-'}</td>
+            <td>${fmtDateTime(row.created_at)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      showModal();
+    }catch(e){
+      alert("เกิดข้อผิดพลาด: " + e.message);
+    }
+  }
+
+  (async function start(){
+    await initAuth();
+    await loadRequests();
+  })();
+</script>
+</body>
+</html>

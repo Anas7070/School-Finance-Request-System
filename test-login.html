@@ -1,0 +1,18 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Test Login</title>
+<input id="u" value="employee"><input id="p" value="4444" type="password"><button id="go">Go</button>
+<pre id="out"></pre>
+<script>
+const OUT = document.getElementById('out');
+const BASE = "http://localhost/school_api/public";
+document.getElementById('go').onclick = async () => {
+  OUT.textContent = "…";
+  const r = await fetch(BASE + "/api/auth/login", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({username:document.getElementById('u').value, password:document.getElementById('p').value})
+  });
+  const j = await r.json().catch(()=>({}));
+  OUT.textContent = `status=${r.status}\n`+JSON.stringify(j,null,2);
+};
+</script>

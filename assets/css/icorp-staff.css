@@ -1,0 +1,625 @@
+/* ---------- Palette / Shadow ---------- */
+:root{
+  --ocean-light:   #E0F7FA;   /* sky aqua background */
+  --ocean-main:    #29B6F6;   /* primary ocean blue */
+  --ocean-deep:    #0288D1;   /* deep aqua */
+  --ocean-soft:    #4DD0E1;   /* tiffany aqua */
+  --ocean-ink:     #033649;   /* deep navy */
+  --ocean-line:    #b2ebf2;
+
+  --ocean-ring:    rgba(41,182,246,.25);
+
+  --elev-1: 0 10px 24px rgba(0,0,0,.08);
+  --elev-2: 0 16px 36px rgba(0,0,0,.13);
+}
+
+/* ---------- Page background ---------- */
+body{
+  background:
+    radial-gradient(900px 420px at 10% -10%, #b3e5fc 0%, transparent 60%),
+    radial-gradient(900px 520px at 110% 10%, #80deea 0%, transparent 60%),
+    linear-gradient(160deg, #E0F7FA, #b3e5fc);
+  background-attachment: fixed;
+  color: var(--ocean-ink);
+}
+
+/* ---------- Header ---------- */
+header{
+  background:#ffffffd9;
+  backdrop-filter: blur(6px);
+  padding:20px 0;
+  box-shadow:0 2px 12px rgba(0,0,0,.05);
+  border-bottom:0;
+}
+header .wrap{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+header h1{
+  margin: 0 0 4px;
+  font-size: 26px;
+  font-weight: 800;
+  color: #0036b4;
+}
+header .subtitle{
+  font-size:14px;
+  color:#01579B;
+}
+
+/* ---------- User Badge ---------- */
+#navUser{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+#navUser .status{
+  background:#ffffff;
+  color:#01579B;
+  border:1px solid var(--ocean-soft);
+  padding:6px 12px;
+  border-radius:999px;
+  font-weight:700;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.5);
+}
+
+/* ---------- Logout button ---------- */
+#logout{
+  background:#ffffff;
+  color:var(--ocean-deep);
+  font-weight:800;
+  border:1px solid #81d4fa;
+  padding:8px 14px;
+  border-radius:12px;
+  transition:.2s ease;
+  box-shadow:0 4px 12px rgba(2,119,189,.15);
+}
+#logout:hover{
+  background:#ef4444;
+  color:#fff;
+  box-shadow:0 8px 22px rgba(2,119,189,.28);
+  transform: translateY(-2px);
+}
+
+/* ---------- Card ---------- */
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.82));
+  border:1px solid color-mix(in srgb, var(--ocean-main) 20%, #ffffff);
+  border-radius:18px;
+  padding:22px 24px;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--elev-1);
+  transition:.2s ease;
+}
+.card:hover{
+  box-shadow: var(--elev-2);
+  transform:translateY(-2px);
+}
+.card h3{
+  margin:0 0 8px;
+  font-size:18px;
+  font-weight:800;
+  color:#01579B;
+}
+
+/* ---------- Table ---------- */
+.request-table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0 12px;
+}
+
+.request-table thead th{
+  background: linear-gradient(180deg, #E1F5FE, #B3E5FC);
+  color:#01579B;
+  font-size:13px;
+  font-weight:800;
+  padding:14px 16px;
+  border-radius:12px;
+  text-transform:uppercase;
+  letter-spacing:.3px;
+}
+
+.request-table tbody tr{
+  background:#fff;
+  border-radius:14px;
+  box-shadow:0 6px 14px rgba(0,0,0,.06);
+  transition:.2s;
+}
+.request-table tbody tr:hover{
+  background:#E0F7FA;
+  transform: translateY(-2px);
+}
+
+.request-table tbody td{
+  padding:16px 16px;
+  font-size:15px;
+  color:var(--ocean-ink);
+}
+
+/* กันปุ่ม action แตกบรรทัดมั่ว */
+.actions-cell{
+  white-space: nowrap;
+}
+
+/* ---------- Status Badge ---------- */
+.status{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 12px;
+  font-size:12px;
+  font-weight:800;
+  border-radius:999px;
+  border:1px solid #b3e5fc;
+  background:#e1f5fe;
+  color:#01579B;
+}
+.status::before{
+  content:"";
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:#0288D1;
+}
+
+/* สีตามสถานะ */
+.status-pending{
+  background:#fff9c4;
+  border-color:#ffe082;
+  color:#8d6e63;
+}
+.status-approved{
+  background:#c8e6c9;
+  border-color:#a5d6a7;
+  color:#1b5e20;
+}
+.status-rejected{
+  background:#ffcdd2;
+  border-color:#ef9a9a;
+  color:#b71c1c;
+}
+.status-reviewed{
+  background:#bbdefb;
+  border-color:#90caf9;
+  color:#0d47a1;
+}
+
+/* ---------- Action Button ---------- */
+.ok{
+  background: linear-gradient(135deg, var(--ocean-main), var(--ocean-deep));
+  border:0;
+  color:#fff;
+  font-weight:800;
+  font-size:14px;
+  padding:10px 16px;
+  border-radius:12px;
+  cursor:pointer;
+  box-shadow:0 12px 28px rgba(2,119,189,.28);
+  transition:.2s ease;
+}
+.ok:hover{
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+
+/* ปุ่มยกเลิกในตาราง (class="cancel") ให้ดูเข้าธีม */
+.cancel{
+  background: linear-gradient(135deg, #0ea5e9, #0369a1);
+  border:0;
+  color:#fff;
+  font-weight:800;
+  font-size:14px;
+  padding:10px 16px;
+  border-radius:12px;
+  cursor:pointer;
+  box-shadow:0 12px 28px rgba(2,119,189,.18);
+  transition:.2s ease;
+}
+.cancel:hover{
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+}
+
+/* ---------- Link button "ดูรายละเอียด" ---------- */
+.btn-link{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.9);
+  background: rgba(240, 249, 255, 0.95);
+  color: #0369a1;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.15);
+  transition:
+    transform 0.06s ease,
+    box-shadow 0.18s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.btn-link:hover{
+  background: linear-gradient(135deg, #0ea5e9, #0369a1);
+  color:#fff;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.22);
+}
+
+/* =========================================================
+   ✅ NOTE MODAL (สำคัญมาก) — ถ้าไม่มีชุดนี้จะ “โผล่ในหน้า” (กรอบแดง)
+   ========================================================= */
+.note-modal{
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .25s ease, visibility .25s ease;
+}
+.note-modal.show{
+  opacity: 1;
+  visibility: visible;
+}
+
+.note-modal-box{
+  background: radial-gradient(circle at 0% 0%, #e0f2fe 0, #ffffff 45%);
+  border-radius: 18px;
+  padding: 20px 20px;
+  width: 92%;
+  max-width: 560px;
+  box-shadow: 0 22px 48px rgba(15,23,42,.25);
+  border: 1px solid rgba(148,163,184,0.35);
+}
+
+.note-modal-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(148,163,184,0.35);
+}
+.note-modal-header h3{
+  margin:0;
+  color:#0f172a;
+  font-size:16px;
+  font-weight: 800;
+}
+.note-modal-close{
+  background: none;
+  border:none;
+  font-size: 22px;
+  cursor: pointer;
+  color: #64748b;
+  line-height: 1;
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+.note-modal-close:hover{
+  background: rgba(224,242,254,0.9);
+}
+
+.note-modal-info{
+  margin-bottom: 12px;
+  padding: 12px;
+  background: rgba(240,249,255,0.95);
+  border-left: 4px solid #0ea5e9;
+  border-radius: 12px;
+}
+.note-modal-info p{
+  margin: 4px 0;
+  color:#0f172a;
+}
+
+.note-modal-label{
+  display:block;
+  margin: 10px 0 8px;
+  font-weight: 800;
+  color:#0f172a;
+}
+
+.note-modal-textarea{
+  width: 100%;
+  min-height: 110px;
+  padding: 12px;
+  border: 1px solid rgba(148,163,184,0.45);
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  box-sizing: border-box;
+  background: rgba(255,255,255,0.98);
+}
+.note-modal-textarea:focus{
+  outline: none;
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 4px rgba(56,189,248,0.22);
+}
+
+.note-modal-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+.note-modal-btn{
+  padding: 9px 16px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 14px;
+  min-width: 110px;
+  transition: transform .06s ease, filter .15s ease, box-shadow .18s ease;
+}
+
+.note-modal-cancel{
+  background: linear-gradient(135deg,#e2e8f0,#f8fafc);
+  color:#0f172a;
+  border: 1px solid rgba(148,163,184,0.45);
+  box-shadow: 0 8px 18px rgba(15,23,42,0.12);
+}
+.note-modal-ok{
+  background: linear-gradient(135deg,#22c55e,#15803d);
+  color:#fff;
+  box-shadow: 0 12px 22px rgba(34,197,94,0.22);
+}
+.note-modal-reject{
+  background: linear-gradient(135deg,#fb7185,#e11d48);
+  color:#fff;
+  box-shadow: 0 12px 22px rgba(225,29,72,0.18);
+}
+
+.note-modal-btn:hover{
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+}
+.note-modal-btn:active{
+  transform: translateY(0);
+}
+
+/* ---------- (คงไว้) Modal Detail เดิมในไฟล์นี้ได้ แต่ตัวจริงจะ override ใน detail css ---------- */
+.modal-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.35);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:50;
+}
+.modal-backdrop.show{ display:flex; }
+
+.modal-box{
+  background:#fff;
+  border-radius:12px;
+  max-width:700px;
+  width:100%;
+  box-shadow:0 12px 28px rgba(0,0,0,.25);
+  overflow:hidden;
+}
+
+.modal-header{
+  background:linear-gradient(135deg, #0288D1, #29B6F6);
+  color:#fff;
+  padding:14px 16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.modal-header h3{ margin:0; font-size:18px; }
+.modal-close{
+  background:none;
+  border:none;
+  font-size:22px;
+  color:#fff;
+  cursor:pointer;
+}
+
+.modal-body{
+  padding:16px;
+  max-height:420px;
+  overflow-y:auto;
+}
+
+/* ---------- Responsive ---------- */
+@media(max-width:900px){
+  .request-table thead{ display:none; }
+  .request-table tr, .request-table td{
+    display:block;
+    width:100%;
+  }
+  .request-table tbody tr{
+    border-radius:14px;
+    margin-bottom:10px;
+  }
+  .actions-cell{
+    white-space: normal;
+  }
+}
+/* =========================================================
+   ICORP Staff – Detail Modal (ให้เหมือน Employee)
+   ใช้ scope ด้วย #detailModal เพื่อไม่ไปชน note modal
+   ========================================================= */
+
+/* backdrop */
+#detailModal.modal-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.50);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 70;
+}
+#detailModal.modal-backdrop.show{
+  display: flex;
+}
+
+/* modal box */
+#detailModal .modal-box{
+  background: radial-gradient(circle at 0% 0%, #e0f2fe 0, #ffffff 45%);
+  border-radius: 18px;
+  max-width: 780px;
+  width: min(780px, calc(100% - 24px));
+  box-shadow: 0 22px 48px rgba(15,23,42,0.35);
+  overflow: hidden;
+  font-size: 14px;
+}
+
+/* header */
+#detailModal .modal-header{
+  background: linear-gradient(90deg,#0ea5e9,#0369a1);
+  color: #f9fafb;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#detailModal .modal-header h3{
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+#detailModal .modal-close{
+  cursor: pointer;
+  font-weight: 900;
+  border: none;
+  background: rgba(2,132,199,.20);
+  color: #e0f2fe;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  font-size: 22px;
+  line-height: 1;
+}
+#detailModal .modal-close:hover{
+  filter: brightness(1.05);
+}
+
+/* body */
+#detailModal .modal-body{
+  padding: 14px 18px 18px;
+  max-height: min(72vh, 520px);
+  overflow-y: auto;
+}
+
+/* section title */
+#detailModal .detail-section-title{
+  font-weight: 800;
+  margin: 8px 0 8px;
+  color: #0f172a;
+}
+
+/* detail grid (จัดระเบียบให้เรียบร้อย) */
+#detailModal .detail-grid{
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 6px 10px;
+  margin-bottom: 10px;
+}
+#detailModal .detail-label{
+  color: #64748b;
+  text-align: right;
+  font-weight: 700;
+}
+#detailModal .detail-value{
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* status tag inside modal */
+#detailModal .tag-status{
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(224,242,254,0.98);
+  color: #075985;
+  border: 1px solid rgba(125,211,252,0.9);
+}
+
+/* timeline table */
+#detailModal .timeline-table{
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 13px;
+  background: rgba(255,255,255,0.98);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 26px rgba(15,23,42,0.12);
+}
+#detailModal .timeline-table th,
+#detailModal .timeline-table td{
+  border-bottom: 1px solid #e2e8f0;
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+#detailModal .timeline-table th{
+  background: #e0f2fe;
+  color: #075985;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-weight: 900;
+}
+
+/* one-line ellipsis for role/note */
+#detailModal .tl-one-line,
+#detailModal td.role{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+/* latest row highlight */
+#detailModal .timeline-table tr.timeline-latest{
+  background: linear-gradient(90deg, rgba(14,165,233,0.12), rgba(240,249,255,0.95));
+  font-weight: 900;
+}
+#detailModal .timeline-table tr.timeline-latest td:first-child{
+  border-left: 6px solid #0ea5e9;
+}
+
+/* color by status on latest row (อิง class ที่ JS ใส่: status-xxx) */
+#detailModal .timeline-table tr.timeline-latest.status-approved{
+  background: rgba(34,197,94,0.10);
+}
+#detailModal .timeline-table tr.timeline-latest.status-rejected{
+  background: rgba(239,68,68,0.10);
+}
+#detailModal .timeline-table tr.timeline-latest.status-reviewed{
+  background: rgba(59,130,246,0.10);
+}
+#detailModal .timeline-table tr.timeline-latest.status-pending{
+  background: rgba(245,158,11,0.10);
+}
+#detailModal .timeline-table tr.timeline-latest.status-verified{
+  background: rgba(245,158,11,0.10);
+}
+
+/* responsive: ให้ grid ไม่พัง */
+@media (max-width: 640px){
+  #detailModal .detail-grid{
+    grid-template-columns: 1fr;
+  }
+  #detailModal .detail-label{
+    text-align: left;
+  }
+  #detailModal .tl-one-line,
+  #detailModal td.role{
+    max-width: 160px;
+  }
+}

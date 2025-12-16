@@ -1,0 +1,1380 @@
+<!DOCTYPE html> 
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ICORP Manager – อนุมัติคำขอ</title>
+
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/icorp-manager.css">
+
+  <style>
+    /* สไตล์สำหรับ modal ยืนยันการโอนเงิน */
+    .confirm-transfer-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+    
+    .confirm-transfer-modal.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .confirm-transfer-box {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    
+    .confirm-transfer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .confirm-transfer-header h3 {
+      margin: 0;
+      color: #333;
+    }
+    
+    .confirm-transfer-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #999;
+      line-height: 1;
+    }
+    
+    .confirm-transfer-content {
+      margin-bottom: 20px;
+    }
+    
+    .confirm-transfer-details {
+      background: #f9f9f9;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 12px 0;
+    }
+    
+    .confirm-transfer-detail-row {
+      display: flex;
+      margin-bottom: 8px;
+    }
+    
+    .confirm-transfer-detail-label {
+      font-weight: 600;
+      min-width: 120px;
+      color: #555;
+    }
+    
+    .confirm-transfer-detail-value {
+      color: #333;
+      word-break: break-word;
+    }
+    
+    .confirm-transfer-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    
+    .confirm-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    
+    .confirm-cancel {
+      background: #f0f0f0;
+      color: #333;
+    }
+    
+    .confirm-ok {
+      background: #4CAF50;
+      color: white;
+    }
+    
+    .confirm-cancel:hover {
+      background: #e0e0e0;
+    }
+    
+    .confirm-ok:hover {
+      background: #45a049;
+    }
+    
+    /* สไตล์สำหรับ modal ระบุเหตุผลการไม่อนุมัติ */
+    .reject-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+    
+    .reject-modal.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .reject-modal-box {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    
+    .reject-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .reject-modal-header h3 {
+      margin: 0;
+      color: #333;
+    }
+    
+    .reject-modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #999;
+      line-height: 1;
+    }
+    
+    .reject-modal-content {
+      margin-bottom: 20px;
+    }
+    
+    .reject-modal-info {
+      margin-bottom: 16px;
+      padding: 12px;
+      background: #fff8e1;
+      border-left: 4px solid #ffc107;
+      border-radius: 4px;
+    }
+    
+    .reject-modal-info p {
+      margin: 0;
+      color: #856404;
+    }
+    
+    .reject-modal-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .reject-modal-textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 14px;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    
+    .reject-modal-textarea:focus {
+      outline: none;
+      border-color: #f44336;
+      box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.2);
+    }
+    
+    .reject-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    
+    .reject-modal-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      min-width: 100px;
+    }
+    
+    .reject-modal-cancel {
+      background: #f0f0f0;
+      color: #333;
+    }
+    
+    .reject-modal-submit {
+      background: #f44336;
+      color: white;
+    }
+    
+    .reject-modal-cancel:hover {
+      background: #e0e0e0;
+    }
+    
+    .reject-modal-submit:hover {
+      background: #d32f2f;
+    }
+    
+    /* สไตล์สำหรับ modal แจ้งเตือนข้อผิดพลาด */
+    .error-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+    
+    .error-modal.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .error-modal-box {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    
+    .error-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .error-modal-header h3 {
+      margin: 0;
+      color: #333;
+    }
+    
+    .error-modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #999;
+      line-height: 1;
+    }
+    
+    .error-modal-content {
+      margin-bottom: 20px;
+    }
+    
+    .error-modal-icon {
+      text-align: center;
+      font-size: 48px;
+      margin-bottom: 16px;
+      color: #f44336;
+    }
+    
+    .error-modal-message {
+      text-align: center;
+      font-size: 16px;
+      color: #333;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+    
+    .error-modal-actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    
+    .error-modal-btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      background: #4CAF50;
+      color: white;
+      min-width: 100px;
+    }
+    
+    .error-modal-btn:hover {
+      background: #45a049;
+    }
+    
+    /* สไตล์สำหรับ modal แจ้งเตือนเลือกโรงเรียน */
+    .school-alert-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+    
+    .school-alert-modal.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .school-alert-modal-box {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      width: 90%;
+      max-width: 350px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      text-align: center;
+      animation: alertPopup 0.3s ease-out;
+    }
+    
+    @keyframes alertPopup {
+      from {
+        transform: scale(0.9);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    
+    .school-alert-modal-content {
+      margin-bottom: 24px;
+    }
+    
+    .school-alert-modal-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      color: #ff9800;
+    }
+    
+    .school-alert-modal-message {
+      font-size: 18px;
+      color: #333;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+    
+    .school-alert-modal-actions {
+      display: flex;
+      justify-content: center;
+    }
+    
+    .school-alert-modal-btn {
+      padding: 12px 32px;
+      border: none;
+      border-radius: 8px;
+      background: #4CAF50;
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    .school-alert-modal-btn:hover {
+      background: #45a049;
+    }
+    
+    /* สไตล์สำหรับ modal แจ้งเตือนโอนสำเร็จ (ใหม่) */
+    .success-transfer-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 3000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+    
+    .success-transfer-modal.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .success-transfer-modal-box {
+      background: white;
+      border-radius: 12px;
+      padding: 40px 32px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      text-align: center;
+      animation: successPopup 0.5s ease-out;
+    }
+    
+    @keyframes successPopup {
+      0% {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+      70% {
+        transform: scale(1.05);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    
+    .success-transfer-modal-content {
+      margin-bottom: 24px;
+    }
+    
+    .success-transfer-modal-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      color: #4CAF50;
+      animation: iconPulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes iconPulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1);
+      }
+    }
+    
+    .success-transfer-modal-message {
+      font-size: 24px;
+      color: #333;
+      font-weight: 700;
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+    
+    .success-transfer-modal-submessage {
+      font-size: 16px;
+      color: #666;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+    
+    .success-transfer-modal-actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    
+    .success-transfer-modal-btn {
+      padding: 12px 40px;
+      border: none;
+      border-radius: 8px;
+      background: #4CAF50;
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+    
+    .success-transfer-modal-btn:hover {
+      background: #45a049;
+      transform: translateY(-2px);
+    }
+  </style>
+
+  <script>
+    window.BACKEND_URL = "http://localhost/school_api/public";
+  </script>
+</head>
+<body>
+<header>
+  <div class="wrap row" style="justify-content:space-between">
+    <div>
+      <h1>ICORP Manager</h1>
+      <div class="subtitle">อนุมัติ / ไม่อนุมัติคำขอที่ผ่านการตรวจสอบแล้วจาก Staff</div>
+    </div>
+    <div class="nav" id="navUser">
+      <span class="status" id="who"></span>
+      <a class="btn" href="#" id="logout">ออกจากระบบ</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="card">
+    <h3>คำขอที่รอการอนุมัติจากผู้จัดการ</h3>
+    <table id="mgrTable" class="request-table" style="margin-top:8px">
+      <thead>
+        <tr>
+          <th>รหัส</th>
+          <th>โรงเรียน</th>
+          <th>หัวข้อ</th>
+          <th>จำนวน</th>
+          <th>สถานะ</th>
+          <th>รายละเอียด</th>
+          <th>ACTION</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- Modal รายละเอียด -->
+<div id="detailModal" class="modal-backdrop">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>รายละเอียดคำขอ</h3>
+      <button class="modal-close" id="detailClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-section-title">ข้อมูลคำขอ</div>
+      <div class="detail-grid">
+        <div class="detail-label">รหัสคำขอ</div>
+        <div class="detail-value" id="d-id">-</div>
+
+        <div class="detail-label">โรงเรียน</div>
+        <div class="detail-value" id="d-school">-</div>
+
+        <div class="detail-label">หัวข้อ</div>
+        <div class="detail-value" id="d-title">-</div>
+
+        <div class="detail-label">จำนวนเงิน</div>
+        <div class="detail-value" id="d-amount">-</div>
+
+        <div class="detail-label">สถานะล่าสุด</div>
+        <div class="detail-value">
+          <span class="tag-status" id="d-status">-</span>
+        </div>
+
+        <div class="detail-label">รายละเอียด</div>
+        <div class="detail-value" id="d-desc">-</div>
+      </div>
+
+      <div class="detail-section-title">ประวัติสถานะ (Timeline)</div>
+      <table class="timeline-table">
+        <thead>
+          <tr>
+            <th>สถานะ</th>
+            <th>บทบาท</th>
+            <th>หมายเหตุ</th>
+            <th>เวลา</th>
+          </tr>
+        </thead>
+        <tbody id="d-timeline-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal ยืนยันการโอนเงิน -->
+<div id="confirmTransferModal" class="confirm-transfer-modal">
+  <div class="confirm-transfer-box">
+    <div class="confirm-transfer-header">
+      <h3>ยืนยันการโอนเงิน</h3>
+      <button class="confirm-transfer-close" id="confirmTransferClose">&times;</button>
+    </div>
+    <div class="confirm-transfer-content">
+      <p><strong>แน่ใจหรือไม่ว่าต้องการโอนเงินตามรายละเอียดต่อไปนี้?</strong></p>
+      <div class="confirm-transfer-details">
+        <div class="confirm-transfer-detail-row">
+          <div class="confirm-transfer-detail-label">คำขอ:</div>
+          <div class="confirm-transfer-detail-value" id="confirmRequest">-</div>
+        </div>
+        <div class="confirm-transfer-detail-row">
+          <div class="confirm-transfer-detail-label">โรงเรียน:</div>
+          <div class="confirm-transfer-detail-value" id="confirmSchool">-</div>
+        </div>
+        <div class="confirm-transfer-detail-row">
+          <div class="confirm-transfer-detail-label">จำนวนเงิน:</div>
+          <div class="confirm-transfer-detail-value" id="confirmAmount">-</div>
+        </div>
+        <div class="confirm-transfer-detail-row">
+          <div class="confirm-transfer-detail-label">หมายเหตุ:</div>
+          <div class="confirm-transfer-detail-value" id="confirmNote">-</div>
+        </div>
+      </div>
+    </div>
+    <div class="confirm-transfer-actions">
+      <button class="confirm-btn confirm-cancel" id="confirmCancel">ยกเลิก</button>
+      <button class="confirm-btn confirm-ok" id="confirmOk">ยืนยันโอนเงิน</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal ระบุเหตุผลการไม่อนุมัติ -->
+<div id="rejectModal" class="reject-modal">
+  <div class="reject-modal-box">
+    <div class="reject-modal-header">
+      <h3>ระบุเหตุผลการไม่อนุมัติ</h3>
+      <button class="reject-modal-close" id="rejectModalClose">&times;</button>
+    </div>
+    <div class="reject-modal-content">
+      <div class="reject-modal-info">
+        <p><strong>คำขอ:</strong> <span id="rejectRequestTitle">-</span></p>
+        <p><strong>รหัส:</strong> <span id="rejectRequestId" class="mono">-</span></p>
+        <p><strong>จำนวน:</strong> <span id="rejectRequestAmount">-</span></p>
+        <p><strong>โรงเรียน:</strong> <span id="rejectRequestSchool">-</span></p>
+      </div>
+      
+      <label class="reject-modal-label">
+        กรุณาระบุเหตุผลที่ไม่อนุมัติ (ถ้ามี):
+      </label>
+      <textarea 
+        id="rejectNote" 
+        class="reject-modal-textarea" 
+        placeholder="ระบุเหตุผลที่ไม่อนุมัติคำขอนี้..."
+      ></textarea>
+    </div>
+    <div class="reject-modal-actions">
+      <button class="reject-modal-btn reject-modal-cancel" id="rejectCancel">ยกเลิก</button>
+      <button class="reject-modal-btn reject-modal-submit" id="rejectSubmit">ยืนยันไม่อนุมัติ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal แจ้งเตือนข้อผิดพลาด -->
+<div id="errorModal" class="error-modal">
+  <div class="error-modal-box">
+    <div class="error-modal-header">
+      <h3>แจ้งเตือน</h3>
+      <button class="error-modal-close" id="errorModalClose">&times;</button>
+    </div>
+    <div class="error-modal-content">
+      <div class="error-modal-icon">⚠️</div>
+      <div class="error-modal-message" id="errorModalMessage">
+        กรุณากรอกข้อมูลให้ครบถ้วน
+      </div>
+    </div>
+    <div class="error-modal-actions">
+      <button class="error-modal-btn" id="errorModalOk">ตกลง</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal แจ้งเตือนเลือกโรงเรียน -->
+<div id="schoolAlertModal" class="school-alert-modal">
+  <div class="school-alert-modal-box">
+    <div class="school-alert-modal-content">
+      <div class="school-alert-modal-icon">⚠️</div>
+      <div class="school-alert-modal-message">กรุณาเลือกโรงเรียน</div>
+    </div>
+    <div class="school-alert-modal-actions">
+      <button class="school-alert-modal-btn" id="schoolAlertOk">ตกลง</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal แจ้งเตือนโอนสำเร็จ (ใหม่) -->
+<div id="successTransferModal" class="success-transfer-modal">
+  <div class="success-transfer-modal-box">
+    <div class="success-transfer-modal-content">
+      <div class="success-transfer-modal-icon">✅</div>
+      <div class="success-transfer-modal-message" id="successTransferMessage">โอนสำเร็จครั้งแรก</div>
+      <div class="success-transfer-modal-submessage" id="successTransferSubmessage"></div>
+    </div>
+    <div class="success-transfer-modal-actions">
+      <button class="success-transfer-modal-btn" id="successTransferOk">ตกลง</button>
+    </div>
+  </div>
+</div>
+
+<!-- ส่วนโอนเงินให้โรงเรียน -->
+<section id="sec-transfer" class="wrap" style="margin-top:20px;margin-bottom:32px;">
+  <div class="card">
+    <h3>โอนเงินให้โรงเรียน</h3>
+
+    <!-- ✅ เพิ่มตัวบอกว่าตอนนี้เลือกโอนคำขอไหนอยู่ -->
+    <div class="subtitle" id="selectedReqHint" style="margin-top:6px;">
+      ยังไม่ได้เลือกคำขอ (โปรดกดปุ่ม “อนุมัติ” ในตารางด้านบน)
+    </div>
+
+    <div class="grid g2" style="margin-top:10px;">
+      <div>
+        <label>เลือกโรงเรียน</label>
+        <select id="schoolSelect">
+          <option value="">กำลังโหลด...</option>
+        </select>
+      </div>
+      <div>
+        <label>จำนวนเงิน (บาท)</label>
+        <input type="number" id="transferAmount" min="1" />
+      </div>
+    </div>
+
+    <div style="margin-top:10px">
+      <label>หมายเหตุ (ถ้ามี)</label>
+      <textarea id="transferNote"></textarea>
+    </div>
+
+    <button class="ok" id="btnTransfer" style="margin-top:14px">
+      ➤ โอนเงิน
+    </button>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <h3>ประวัติการโอนล่าสุด</h3>
+    <table id="transferTable" style="margin-top:8px;">
+      <thead>
+        <tr>
+          <th>เวลา</th>
+          <th>โรงเรียน</th>
+          <th>จำนวน</th>
+          <th>อ้างอิง</th>
+          <th>หมายเหตุ</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<script src="assets/js/common.js"></script>
+<script>
+  const BASE  = window.BACKEND_URL || "http://localhost/school_api/public";
+  const token = localStorage.getItem("jwt_token");
+  if (!token) location.href = "index.html";
+
+  const STATUS_PENDING  = "Pending";
+  const STATUS_APPROVED = "Approved";
+  const STATUS_REJECTED = "Rejected";
+  const STATUS_REVIEWED = "Reviewed";
+  const STATUS_VERIFIED = "Verified"; // เผื่อ timeline มี
+
+  function roleLabel(role){
+    switch(role){
+      case 'employee':      return 'พนักงานโรงเรียน';
+      case 'director':      return 'ผู้อำนวยการ';
+      case 'icorp-staff':   return 'พนักงาน ICORP';
+      case 'icorp-manager': return 'ผู้จัดการ ICORP';
+      default:              return role || '-';
+    }
+  }
+
+  function mapStatusLabel(s){
+    switch(s){
+      case STATUS_PENDING:  return "Pending";
+      case STATUS_VERIFIED: return "Verified";
+      case STATUS_APPROVED: return "Approved";
+      case STATUS_REJECTED: return "Rejected";
+      case STATUS_REVIEWED: return "Reviewed";
+      default:              return s || "-";
+    }
+  }
+
+  function mapStatusClass(s){
+    switch(s){
+      case STATUS_PENDING:  return "status-pending";
+      case STATUS_APPROVED: return "status-approved";
+      case STATUS_REJECTED: return "status-rejected";
+      case STATUS_REVIEWED: return "status-reviewed";
+      default:              return "";
+    }
+  }
+
+  function fmtBaht(n){
+    try { return Number(n).toLocaleString('th-TH',{minimumFractionDigits:0}); }
+    catch { return n; }
+  }
+  function fmtDateTime(str){
+    if(!str) return '-';
+    try{
+      const d = new Date(str);
+      return d.toLocaleString('th-TH');
+    }catch(e){ return str; }
+  }
+
+  // ---------- auth ----------
+  async function verifyMe(){
+    const url = `${BASE}/api/auth/me?token=${encodeURIComponent(token)}`;
+    const res = await fetch(url, { headers:{Authorization:"Bearer "+token} });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok || !data.profile) throw new Error("verify-failed");
+    return data.profile;
+  }
+
+  async function initAuth(){
+    try{
+      const me = await verifyMe();
+      if(me.role !== "icorp-manager") throw new Error("role-mismatch");
+      localStorage.setItem("icr_session_v1", JSON.stringify(me));
+      document.getElementById("who").textContent = `${me.name} (${me.username})`;
+
+      const lg = document.getElementById("logout");
+      if(lg) lg.addEventListener("click", e=>{
+        e.preventDefault();
+        localStorage.removeItem("jwt_token");
+        localStorage.removeItem("icr_session_v1");
+        location.href = "index.html";
+      });
+    }catch(e){
+      localStorage.removeItem("jwt_token");
+      localStorage.removeItem("icr_session_v1");
+      location.href = "index.html";
+    }
+  }
+
+  // ========= เก็บรายการคำขอ + เลือกคำขอเพื่อโอน =========
+  let reviewItems = [];
+  let currentRejectRequest = null;
+
+  // ✅ สำคัญ: เก็บ request_id ที่อนุมัติ (กัน Missing request_id)
+  let selectedRequestId = "";
+  let selectedRequestObj = null;
+
+  function setSelectedRequest(req){
+    selectedRequestId = req ? String(req.id || "") : "";
+    selectedRequestObj = req || null;
+
+    const hint = document.getElementById("selectedReqHint");
+    if(!selectedRequestId){
+      hint.textContent = "ยังไม่ได้เลือกคำขอ (โปรดกดปุ่ม “อนุมัติ” ในตารางด้านบน)";
+      return;
+    }
+    hint.textContent = `กำลังโอนตามคำขอ: ${req.id} – ${req.title || ''} (${fmtBaht(req.amount || 0)} บาท)`;
+  }
+
+  // ---------- ตารางคำขอที่รออนุมัติ ----------
+  async function loadReviewQueue(){
+    const r = await fetch(`${BASE}/api/requests`, {
+      headers:{Authorization:"Bearer "+token}
+    });
+    if(r.status === 401){
+      localStorage.removeItem("jwt_token");
+      localStorage.removeItem("icr_session_v1");
+      location.href = "index.html";
+      return;
+    }
+    const j = await r.json();
+
+    // ผู้จัดการเห็นเคสที่ Staff ตรวจสอบแล้ว (Reviewed)
+    const items = (j.items || []).filter(x => x.status === STATUS_REVIEWED);
+
+    reviewItems = items;
+
+    const tb = document.querySelector("#mgrTable tbody");
+    tb.innerHTML = items.map(row => `
+      <tr>
+        <td class="mono">${row.id}</td>
+        <td>${row.school ?? "-"}</td>
+        <td>${row.title ?? "-"}</td>
+        <td>${fmtBaht(Number(row.amount || 0))}</td>
+        <td>
+          <span class="status ${mapStatusClass(row.status)}">
+            ${mapStatusLabel(row.status)}
+          </span>
+        </td>
+        <td>
+          <button class="btn-link" data-detail-id="${row.id}">ดูรายละเอียด</button>
+        </td>
+        <td class="actions-cell">
+          <!-- ✅ เปลี่ยนจาก "อนุมัติ" เป็น "อนุมัติ" -->
+          <button class="ok" data-act="pick" data-id="${row.id}">อนุมัติ</button>
+          <button class="danger" data-act="reject" data-id="${row.id}" data-title="${row.title || ''}" data-amount="${row.amount || 0}" data-school="${row.school || ''}">ไม่อนุมัติ</button>
+        </td>
+      </tr>
+    `).join("");
+
+    // ดูรายละเอียด
+    tb.querySelectorAll("button[data-detail-id]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.getAttribute("data-detail-id");
+        openDetailModal(id);
+      });
+    });
+
+    // ✅ อนุมัติ -> เติมฟอร์ม + set request_id
+    tb.querySelectorAll("button[data-act='pick']").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id  = btn.getAttribute("data-id");
+        const req = reviewItems.find(r => String(r.id) === String(id));
+        if(!req) return;
+
+        setSelectedRequest(req);
+        prefillTransferFormFromRequest(req);
+      });
+    });
+
+    // ไม่อนุมัติ
+    tb.querySelectorAll("button[data-act='reject']").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id  = btn.getAttribute("data-id");
+        const title = btn.getAttribute("data-title");
+        const amount = btn.getAttribute("data-amount");
+        const school = btn.getAttribute("data-school");
+
+        currentRejectRequest = { id, title, amount, school };
+
+        document.getElementById("rejectRequestId").textContent = id;
+        document.getElementById("rejectRequestTitle").textContent = title || "-";
+        document.getElementById("rejectRequestAmount").textContent = amount ? fmtBaht(amount) + " บาท" : "-";
+        document.getElementById("rejectRequestSchool").textContent = school || "-";
+        document.getElementById("rejectNote").value = "";
+
+        showRejectModal();
+      });
+    });
+
+    // ถ้าคำขอที่เลือกไว้ถูกหายไปแล้ว (โดนโอน/โดน reject) ให้ reset
+    if(selectedRequestId){
+      const stillExists = reviewItems.some(r => String(r.id) === String(selectedRequestId));
+      if(!stillExists){
+        setSelectedRequest(null);
+      }
+    }
+  }
+
+  async function doAction(id, newStatus, note){
+    try{
+      const res = await fetch(`${BASE}/api/requests/${encodeURIComponent(id)}`, {
+        method:"PATCH",
+        headers:{
+          "Content-Type":"application/json",
+          Authorization:"Bearer "+token
+        },
+        body:JSON.stringify({ status:newStatus, note })
+      });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data.error || "อัปเดตสถานะไม่สำเร็จ");
+      await loadReviewQueue();
+    }catch(e){
+      alert("เกิดข้อผิดพลาด: " + e.message);
+    }
+  }
+
+  // ========= เติมฟอร์มโอนเงินอัตโนมัติ =========
+  function prefillTransferFormFromRequest(req){
+    const sel  = document.getElementById("schoolSelect");
+    const amt  = document.getElementById("transferAmount");
+    const note = document.getElementById("transferNote");
+
+    if(amt)  amt.value  = req.amount || "";
+    if(note) note.value = `ตามคำขอ ${req.id || ""} – ${req.title || ""}`.trim();
+
+    if(sel && req.school){
+      const target = String(req.school).toLowerCase();
+      let matchedIndex = -1;
+      for(let i=0;i<sel.options.length;i++){
+        const txt = sel.options[i].textContent.toLowerCase();
+        if(txt.includes(target)){
+          matchedIndex = i;
+          break;
+        }
+      }
+      if(matchedIndex >= 0) sel.selectedIndex = matchedIndex;
+    }
+
+    const sec = document.getElementById("sec-transfer");
+    if(sec && sec.scrollIntoView){
+      sec.scrollIntoView({behavior:"smooth", block:"start"});
+    }
+  }
+
+  // ---------- Modal รายละเอียด ----------
+  const modal   = document.getElementById("detailModal");
+  const closeBtn= document.getElementById("detailClose");
+  function showModal(){ modal.classList.add("show"); }
+  function hideModal(){ modal.classList.remove("show"); }
+
+  closeBtn.addEventListener("click", hideModal);
+  modal.addEventListener("click", e=>{ if(e.target===modal) hideModal(); });
+
+  // ---------- Modal ไม่อนุมัติ ----------
+  const rejectModal = document.getElementById("rejectModal");
+  const rejectClose = document.getElementById("rejectModalClose");
+  const rejectCancel = document.getElementById("rejectCancel");
+  const rejectSubmit = document.getElementById("rejectSubmit");
+  const rejectNote = document.getElementById("rejectNote");
+
+  function showRejectModal() {
+    rejectModal.classList.add("show");
+    rejectNote.focus();
+  }
+
+  function hideRejectModal() {
+    rejectModal.classList.remove("show");
+    currentRejectRequest = null;
+  }
+
+  rejectClose.addEventListener("click", hideRejectModal);
+  rejectCancel.addEventListener("click", hideRejectModal);
+
+  rejectSubmit.addEventListener("click", async () => {
+    if (!currentRejectRequest) return;
+
+    const note = rejectNote.value.trim();
+    await doAction(currentRejectRequest.id, STATUS_REJECTED, note);
+
+    // ถ้าคำขอที่เลือกไว้ถูก reject ให้ reset
+    if(String(selectedRequestId) === String(currentRejectRequest.id)){
+      setSelectedRequest(null);
+    }
+
+    hideRejectModal();
+  });
+
+  rejectModal.addEventListener("click", (e) => {
+    if (e.target === rejectModal) hideRejectModal();
+  });
+
+  rejectNote.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.ctrlKey) {
+      e.preventDefault();
+      rejectSubmit.click();
+    }
+  });
+
+  // ---------- Modal แจ้งเตือนข้อผิดพลาด ----------
+  const errorModal = document.getElementById("errorModal");
+  const errorModalClose = document.getElementById("errorModalClose");
+  const errorModalOk = document.getElementById("errorModalOk");
+
+  function showErrorModal(message) {
+    document.getElementById("errorModalMessage").textContent = message;
+    errorModal.classList.add("show");
+  }
+
+  function hideErrorModal() {
+    errorModal.classList.remove("show");
+  }
+
+  errorModalClose.addEventListener("click", hideErrorModal);
+  errorModalOk.addEventListener("click", hideErrorModal);
+  errorModal.addEventListener("click", (e) => {
+    if (e.target === errorModal) hideErrorModal();
+  });
+
+  // ---------- Modal แจ้งเตือนเลือกโรงเรียน ----------
+  const schoolAlertModal = document.getElementById('schoolAlertModal');
+  const schoolAlertOk = document.getElementById('schoolAlertOk');
+
+  function showSchoolAlert() {
+    schoolAlertModal.classList.add('show');
+  }
+
+  function hideSchoolAlert() {
+    schoolAlertModal.classList.remove('show');
+  }
+
+  schoolAlertOk.addEventListener('click', hideSchoolAlert);
+  schoolAlertModal.addEventListener('click', (e) => {
+    if (e.target === schoolAlertModal) hideSchoolAlert();
+  });
+
+  // ---------- Modal แจ้งเตือนโอนสำเร็จ ----------
+  const successTransferModal = document.getElementById('successTransferModal');
+  const successTransferOk = document.getElementById('successTransferOk');
+  const successTransferMessage = document.getElementById('successTransferMessage');
+  const successTransferSubmessage = document.getElementById('successTransferSubmessage');
+
+  function showSuccessTransfer(message = "โอนสำเร็จ", submessage = "") {
+    successTransferMessage.textContent = message;
+    successTransferSubmessage.textContent = submessage;
+    successTransferModal.classList.add('show');
+
+    setTimeout(() => {
+      if (successTransferModal.classList.contains('show')) {
+        hideSuccessTransfer();
+      }
+    }, 3000);
+  }
+
+  function hideSuccessTransfer() {
+    successTransferModal.classList.remove('show');
+  }
+
+  successTransferOk.addEventListener('click', hideSuccessTransfer);
+  successTransferModal.addEventListener('click', (e) => {
+    if (e.target === successTransferModal) hideSuccessTransfer();
+  });
+
+  async function openDetailModal(id){
+    try{
+      const res = await fetch(`${BASE}/api/requests/${encodeURIComponent(id)}/timeline`, {
+        headers:{Authorization:"Bearer "+token}
+      });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data.error || "โหลดรายละเอียดไม่สำเร็จ");
+
+      const r  = data.request || {};
+      const tl = Array.isArray(data.timeline) ? data.timeline : [];
+
+      document.getElementById("d-id").textContent     = r.id || "-";
+      document.getElementById("d-school").textContent = r.school || "-";
+      document.getElementById("d-title").textContent  = r.title || "-";
+      document.getElementById("d-amount").textContent = r.amount ? fmtBaht(r.amount)+" บาท" : "-";
+      document.getElementById("d-status").textContent = mapStatusLabel(r.status);
+      document.getElementById("d-desc").textContent   = r.description || "-";
+
+      const tb = document.getElementById("d-timeline-body");
+
+      const sortedTimeline = [...tl].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      );
+
+      tb.innerHTML = sortedTimeline.map(row=>`
+        <tr>
+          <td>${mapStatusLabel(row.action)}</td>
+          <td>${roleLabel(row.actor_role)}</td>
+          <td>${row.note ? row.note : '-'}</td>
+          <td>${fmtDateTime(row.created_at)}</td>
+        </tr>
+      `).join("");
+
+      showModal();
+    }catch(e){
+      alert("เกิดข้อผิดพลาด: " + e.message);
+    }
+  }
+
+  // ---------- โหลดบัญชีโรงเรียนใส่ select ----------
+  async function loadSchoolAccountsForManager(){
+    const sel = document.getElementById("schoolSelect");
+    if (!sel) return;
+
+    sel.innerHTML = `<option value="">กำลังโหลดบัญชีโรงเรียน...</option>`;
+
+    try{
+      const res = await fetch(`${BASE}/api/finance/accounts`, {
+        headers:{ Authorization: "Bearer " + token }
+      });
+      const data  = await res.json().catch(() => ({}));
+      const items = Array.isArray(data.items) ? data.items : [];
+
+      if (!items.length){
+        sel.innerHTML = `<option value="">ยังไม่มีบัญชีโรงเรียน</option>`;
+        return;
+      }
+
+      sel.innerHTML = `<option value="">เลือกโรงเรียน / บัญชีปลายทาง</option>`;
+
+      for (const acc of items){
+        const opt = document.createElement("option");
+        opt.value = acc.id;
+        opt.textContent =
+          `${acc.account_name || "ไม่ระบุชื่อบัญชี"} – ` +
+          `${acc.bank_name || ""} ${acc.account_number || ""}`;
+        sel.appendChild(opt);
+      }
+    }catch(e){
+      console.error(e);
+      sel.innerHTML = `<option value="">โหลดบัญชีไม่สำเร็จ</option>`;
+    }
+  }
+
+  // ---------- โหลดประวัติการโอน ----------
+  async function loadTransferHistory(){
+    const tb = document.querySelector("#transferTable tbody");
+    if (!tb) return;
+
+    tb.innerHTML = `<tr><td colspan="5">กำลังโหลด...</td></tr>`;
+
+    try{
+      const res = await fetch(`${BASE}/api/finance/transfers`, {
+        headers:{ Authorization: "Bearer " + token }
+      });
+      const data  = await res.json().catch(() => ({}));
+      const items = Array.isArray(data.items) ? data.items : [];
+
+      if (!items.length){
+        tb.innerHTML = `<tr><td colspan="5">ยังไม่มีประวัติการโอน</td></tr>`;
+        return;
+      }
+
+      tb.innerHTML = items.map(tr => `
+        <tr>
+          <td class="mono">${fmtDateTime(tr.created_at)}</td>
+          <td>${tr.account_name || "-"}</td>
+          <td class="mono">${fmtBaht(tr.amount || 0)} บาท</td>
+          <td>${tr.ref_code || "-"}</td>
+          <td>${tr.note || "-"}</td>
+        </tr>
+      `).join("");
+    }catch(e){
+      console.error(e);
+      tb.innerHTML = `<tr><td colspan="5">โหลดประวัติการโอนไม่สำเร็จ</td></tr>`;
+    }
+  }
+
+  // ---------- Modal ยืนยันการโอนเงิน ----------
+  const confirmModal = document.getElementById("confirmTransferModal");
+  const confirmClose = document.getElementById("confirmTransferClose");
+  const confirmCancel = document.getElementById("confirmCancel");
+  const confirmOk = document.getElementById("confirmOk");
+
+  function showConfirmModal(reqId, schoolName, amount, note) {
+    document.getElementById("confirmRequest").textContent = reqId ? reqId : "-";
+    document.getElementById("confirmSchool").textContent = schoolName || "-";
+    document.getElementById("confirmAmount").textContent = amount ? fmtBaht(amount) + " บาท" : "-";
+    document.getElementById("confirmNote").textContent = note || "-";
+    confirmModal.classList.add("show");
+  }
+
+  function hideConfirmModal() {
+    confirmModal.classList.remove("show");
+  }
+
+  confirmClose.addEventListener("click", hideConfirmModal);
+  confirmCancel.addEventListener("click", hideConfirmModal);
+  confirmModal.addEventListener("click", e => {
+    if (e.target === confirmModal) hideConfirmModal();
+  });
+
+  // ---------- โอนเงิน ----------
+  document.getElementById("btnTransfer").addEventListener("click", async () => {
+    const schoolSelect = document.getElementById("schoolSelect");
+    const schoolAccountId = schoolSelect.value;
+    const amount = Number(document.getElementById("transferAmount").value);
+    const note = document.getElementById("transferNote").value.trim();
+
+    // ✅ ต้องเลือกคำขอก่อน (แก้ Missing request_id)
+    if(!selectedRequestId){
+      showErrorModal("กรุณาเลือกคำขอในตารางด้านบนก่อน\n(กดปุ่ม “อนุมัติ”)");
+      return;
+    }
+
+    if (!schoolAccountId){
+      showSchoolAlert();
+      return;
+    }
+
+    const selectedOption = schoolSelect.options[schoolSelect.selectedIndex];
+    const schoolName = selectedOption ? selectedOption.textContent : "-";
+
+    if (!(amount > 0)){
+      showErrorModal("กรุณากรอกจำนวนเงินให้ถูกต้อง");
+      return;
+    }
+
+    // แสดง modal ยืนยัน
+    showConfirmModal(selectedRequestId, schoolName, amount, note);
+
+    const userConfirmed = await new Promise(resolve => {
+      const ok = () => { hideConfirmModal(); resolve(true); };
+      const no = () => { hideConfirmModal(); resolve(false); };
+
+      confirmOk.onclick = ok;
+      confirmCancel.onclick = no;
+      confirmClose.onclick = no;
+
+      const outsideClick = (e) => {
+        if (e.target === confirmModal) {
+          confirmModal.removeEventListener("click", outsideClick);
+          no();
+        }
+      };
+      confirmModal.addEventListener("click", outsideClick);
+    });
+
+    if (!userConfirmed) return;
+
+    try{
+      const res = await fetch(`${BASE}/api/finance/transfers`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token
+        },
+        body: JSON.stringify({
+          request_id: selectedRequestId,      // ✅ ส่ง request_id ไปด้วย
+          school_account_id: schoolAccountId,
+          amount,
+          note,
+        })
+      });
+
+      const data = await res.json().catch(()=>({}));
+      if (!res.ok || data.ok === false){
+        throw new Error(data.error || "บันทึกการโอนล้มเหลว");
+      }
+
+      const detail =
+        `คำขอ: ${selectedRequestId}\n` +
+        `โรงเรียน: ${schoolName}\n` +
+        `จำนวน: ${fmtBaht(amount)} บาท` +
+        (data.ref_code ? `\nอ้างอิง: ${data.ref_code}` : "");
+
+      showSuccessTransfer("โอนเงินสำเร็จ", detail);
+
+      document.getElementById("transferAmount").value = "";
+      document.getElementById("transferNote").value   = "";
+
+      // ✅ หลังโอนเสร็จ คำขอนี้จะไม่อยู่ใน Reviewed แล้ว → reset selection
+      setSelectedRequest(null);
+
+      await Promise.all([
+        loadReviewQueue(),
+        loadTransferHistory()
+      ]);
+    }catch(e){
+      alert("เกิดข้อผิดพลาด: " + e.message);
+    }
+  });
+
+  // ---------- เริ่มทำงาน ----------
+  (async function start(){
+    await initAuth();
+    await Promise.all([
+      loadReviewQueue(),
+      loadSchoolAccountsForManager(),
+      loadTransferHistory()
+    ]).catch(console.error);
+  })();
+</script>
+
+</body>
+</html>
