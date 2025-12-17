@@ -39,7 +39,7 @@
       font-size:14px;
       color:#4b5563;
       margin-bottom:16px;
-      white-space:pre-line; /* ให้ \n เป็นขึ้นบรรทัดใหม่ได้ */
+      white-space:pre-line;
     }
     .center-alert-btn{
       display:inline-flex;
@@ -68,12 +68,10 @@
       font-weight: 500;
       animation: fadeIn 0.3s ease;
     }
-
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-5px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
     input.error, textarea.error {
       border-color: #dc2626 !important;
       background-color: #fef2f2;
@@ -91,7 +89,6 @@
       border: 1px solid #bae6fd;
       font-size: 13px;
     }
-
     .account-limit-info .limit-badge {
       background: #d90902;
       color: white;
@@ -99,6 +96,61 @@
       border-radius: 12px;
       font-size: 12px;
       font-weight: 600;
+    }
+
+    /* ===== กล่องจดหมาย ===== */
+    .mail-btn{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:42px;
+      height:42px;
+      border-radius:999px;
+      border:1px solid rgba(125,211,252,0.9);
+      background: rgba(240,249,255,0.95);
+      cursor:pointer;
+      box-shadow:0 10px 22px rgba(15,23,42,.12);
+      text-decoration:none;
+      color:#0f172a;
+      font-weight:900;
+    }
+    .mail-badge{
+      position:absolute;
+      top:-6px;
+      right:-6px;
+      min-width:22px;
+      height:22px;
+      padding:0 6px;
+      border-radius:999px;
+      background:#ef4444;
+      color:#fff;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      font-size:12px;
+      font-weight:900;
+      box-shadow:0 10px 20px rgba(239,68,68,.35);
+    }
+
+    .inbox-modal .modal-box{ max-width:720px; }
+    .inbox-list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:10px;
+    }
+    .inbox-empty{
+      text-align:center;
+      color:#64748b;
+      padding:24px 0;
+      font-weight:700;
+    }
+    .inbox-toolbar{
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+      margin-top:6px;
     }
   </style>
 
@@ -113,7 +165,14 @@
       <h1>พนักงานโรงเรียน</h1>
       <div class="subtitle">สร้างคำขอเบิกค่าใช้จ่าย (ส่งไปยังผู้อำนวยการ)</div>
     </div>
-    <div class="nav" id="navUser">
+
+    <div class="nav" id="navUser" style="gap:10px;">
+      <!-- ปุ่มกล่องจดหมาย -->
+      <a class="mail-btn" href="#" id="inboxBtn" title="กล่องจดหมาย">
+        ✉
+        <span class="mail-badge" id="inboxBadge">0</span>
+      </a>
+
       <span class="status" id="who"></span>
       <a class="btn" href="#" id="logout">ออกจากระบบ</a>
     </div>
@@ -121,7 +180,7 @@
 </header>
 
 <main class="wrap emp-layout" id="empLayout">
-  <!-- ปุ่มเปิด/ปิดเมนู (บนมือถือ / desktop) -->
+  <!-- ปุ่มเปิด/ปิดเมนู -->
   <button class="sidebar-toggle" id="sidebarToggle">☰ เมนู</button>
 
   <!-- เมนูด้านข้าง -->
@@ -145,9 +204,8 @@
 
   <!-- เนื้อหาหลัก -->
   <section class="emp-main">
-    <!-- View 1: คำขอเบิกค่าใช้จ่าย -->
+    <!-- View 1 -->
     <section id="view-requests" class="emp-view is-active">
-      <!-- ฟอร์มส่งคำขอ -->
       <div class="card">
         <!-- แถบโชว์เครดิตโรงเรียน -->
         <div style="
@@ -164,6 +222,9 @@
           <span style="font-weight:600;">เครดิตคงเหลือของโรงเรียน:</span>
           <span id="req-credit-balance" style="font-size:18px;font-weight:800;color:#1d4ed8;">-</span>
           <span style="font-weight:500;">เครดิต</span>
+          <span style="margin-left:auto;color:#64748b;font-size:13px;font-weight:700;">
+            ค่าธรรมเนียมต่อคำขอ: <b>5</b> เครดิต
+          </span>
         </div>
 
         <div class="grid g2">
@@ -189,7 +250,6 @@
         </div>
       </div>
 
-      <!-- ตารางคำขอของฉัน -->
       <div class="card">
         <h3>คำขอของฉัน</h3>
         <table id="myTable" style="margin-top:8px">
@@ -207,9 +267,8 @@
       </div>
     </section>
 
-    <!-- View 2: เกี่ยวกับการเงิน -->
+    <!-- View 2 -->
     <section id="view-finance" class="emp-view">
-      <!-- ยอดเงินคงเหลือรวม -->
       <div class="card">
         <h3>ยอดเงินคงเหลือรวมในระบบ</h3>
         <p class="emp-note">แสดงยอดรวมจากบัญชีที่ผูกไว้ทั้งหมด</p>
@@ -218,16 +277,14 @@
         </div>
       </div>
 
-      <!-- บัญชีธนาคารของโรงเรียน -->
       <div class="card">
         <h3>บัญชีธนาคารของโรงเรียน</h3>
-        
-        <!-- แจ้งเตือนเกี่ยวกับจำนวนบัญชี -->
+
         <div class="account-limit-info">
           <span class="limit-badge">จำกัด</span>
           <span>สามารถเพิ่มบัญชีธนาคารได้สูงสุด 2 บัญชีเท่านั้น</span>
         </div>
-        
+
         <p class="emp-note">
           บัญชีเหล่านี้คือบัญชีปลายทางที่จะโอนเงินเข้ามาให้โรงเรียน
         </p>
@@ -245,7 +302,6 @@
           </tbody>
         </table>
 
-        <!-- ฟอร์มเพิ่มบัญชี -->
         <hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb;">
         <h4 style="margin-top:0;">เพิ่มบัญชีธนาคารใหม่</h4>
         <form id="fin-account-form" class="grid g2" style="margin-top:8px;gap:12px;">
@@ -269,12 +325,9 @@
         </form>
       </div>
 
-      <!-- ประวัติการโอนเงิน -->
       <div class="card">
         <h2>ประวัติการโอนเงิน</h2>
-        <p class="emp-note">
-          แสดงรายการบันทึกการโอนเงิน
-        </p>
+        <p class="emp-note">แสดงรายการบันทึกการโอนเงิน</p>
         <table style="margin-top:8px">
           <thead>
             <tr>
@@ -291,14 +344,11 @@
       </div>
     </section>
 
-    <!-- View 3: เครดิต -->
+    <!-- View 3 -->
     <section id="view-credit" class="emp-view">
-      <!-- กล่องแสดงเครดิต + เติมเครดิต -->
       <div class="card">
         <h3>เครดิตของโรงเรียน</h3>
-        <p class="emp-note">
-          เครดิตนี้ใช้ตรวจสอบก่อนยื่นคำขอเบิกเงิน 
-        </p>
+        <p class="emp-note">เครดิตนี้ใช้ตรวจสอบก่อนยื่นคำขอเบิกเงิน</p>
 
         <div style="margin:12px 0;padding:12px 16px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;display:flex;align-items:center;gap:8px;">
           <span style="font-weight:600;">เครดิตคงเหลือ:</span>
@@ -408,6 +458,25 @@
   </div>
 </div>
 
+<!-- ✅ Modal กล่องจดหมาย -->
+<div id="inboxModal" class="modal-backdrop inbox-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>กล่องจดหมาย</h3>
+      <button class="modal-close" id="inboxClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="inbox-toolbar">
+        <button type="button" class="btn-link" id="inboxReadAllBtn">อ่านทั้งหมด</button>
+        <button type="button" class="btn-link" id="inboxRefreshBtn">รีเฟรช</button>
+      </div>
+
+      <div id="inboxEmpty" class="inbox-empty">กำลังโหลด...</div>
+      <div id="inboxList" class="inbox-list"></div>
+    </div>
+  </div>
+</div>
+
 <!-- กล่องแจ้งเตือนตรงกลาง -->
 <div id="centerAlert" class="center-alert-backdrop">
   <div class="center-alert-box">
@@ -428,6 +497,9 @@
   const STATUS_APPROVED = "Approved";
   const STATUS_REJECTED = "Rejected";
   const STATUS_REVIEWED = "Reviewed";
+
+  // ✅ ค่าธรรมเนียมเครดิตต่อคำขอ/โอน
+  const FEE_PER_TRANSFER = 5;
 
   // จำนวนบัญชีสูงสุดที่อนุญาต
   const MAX_BANK_ACCOUNTS = 2;
@@ -473,6 +545,14 @@
       return d.toLocaleString('th-TH');
     }catch(e){ return str; }
   }
+  function escapeHtml(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
 
   async function verifyMe(){
     const url = `${BASE}/api/auth/me?token=${encodeURIComponent(token)}`;
@@ -493,7 +573,7 @@
     });
   }
 
-  // ===== ฟังก์ชันแจ้งเตือนตรงกลาง =====
+  // ===== กล่องแจ้งเตือนตรงกลาง =====
   function showCenterAlert(options = {}){
     const title   = options.title   || "แจ้งเตือน";
     const message = options.message || "";
@@ -505,7 +585,6 @@
     const okBtn  = document.getElementById("centerAlertOk");
 
     if(!wrap || !tEl || !mEl || !okBtn){
-      // fallback ถ้า element ไม่มีจริง
       alert(message || title);
       if(onClose) onClose();
       return;
@@ -535,50 +614,163 @@
   function initFormValidation() {
     const titleInput = document.getElementById('title');
     const amountInput = document.getElementById('amount');
-    
-    // ฟังก์ชันแสดงข้อผิดพลาด
-    function showError(inputId, message) {
-      const errorEl = document.getElementById(inputId + '-error');
-      if (errorEl) {
-        errorEl.textContent = message;
-        errorEl.style.display = 'block';
-      }
-      const inputEl = document.getElementById(inputId);
-      if (inputEl) {
-        inputEl.classList.add('error');
-      }
-    }
-    
-    // ฟังก์ชันซ่อนข้อผิดพลาด
+
     function hideError(inputId) {
       const errorEl = document.getElementById(inputId + '-error');
-      if (errorEl) {
-        errorEl.style.display = 'none';
-      }
+      if (errorEl) errorEl.style.display = 'none';
       const inputEl = document.getElementById(inputId);
-      if (inputEl) {
-        inputEl.classList.remove('error');
-      }
+      if (inputEl) inputEl.classList.remove('error');
     }
-    
-    // เพิ่ม event listener สำหรับ real-time validation (เฉพาะหัวข้อและจำนวนเงิน)
+
     titleInput.addEventListener('input', function() {
-      if (this.value.trim()) {
-        hideError('title');
-      }
+      if (this.value.trim()) hideError('title');
     });
-    
+
     amountInput.addEventListener('input', function() {
       const amount = parseFloat(this.value);
-      if (amount && amount > 0) {
-        hideError('amount');
-      }
+      if (amount && amount > 0) hideError('amount');
     });
   }
 
   let allRequests = [];
   let editingRequest = null;
-  let currentAccounts = []; // เก็บข้อมูลบัญชีปัจจุบัน
+  let currentAccounts = [];
+
+  // ====== NOTIFICATIONS (กล่องจดหมาย) ======
+  let unreadNotifs = [];
+
+  function updateInboxBadge(count){
+    const badge = document.getElementById("inboxBadge");
+    if(!badge) return;
+    if(count > 0){
+      badge.style.display = "inline-flex";
+      badge.textContent = String(count);
+    }else{
+      badge.style.display = "none";
+      badge.textContent = "0";
+    }
+  }
+
+  async function loadUnreadNotifications(){
+    try{
+      const res = await fetch(`${BASE}/api/notifications`, {
+        headers:{ Authorization:"Bearer "+token }
+      });
+      const data = await res.json().catch(()=> ({}));
+      if(!res.ok) return { items: [], error: (data && data.error) ? data.error : `HTTP ${res.status}` };
+      if(!data.ok) return { items: [], error: data.error || "API ok=false" };
+      return { items: Array.isArray(data.items) ? data.items : [], error: null };
+    }catch(e){
+      return { items: [], error: e.message || "network error" };
+    }
+  }
+
+  async function markNotificationRead(id){
+    try{
+      await fetch(`${BASE}/api/notifications/${encodeURIComponent(id)}/read`, {
+        method:"POST",
+        headers:{ Authorization:"Bearer "+token }
+      });
+    }catch(e){}
+  }
+
+  async function markAllNotificationsRead(){
+    try{
+      await fetch(`${BASE}/api/notifications/read-all`, {
+        method:"POST",
+        headers:{ Authorization:"Bearer "+token }
+      });
+    }catch(e){}
+  }
+
+  function renderInbox(extraErrorText = null){
+    const listEl  = document.getElementById("inboxList");
+    const emptyEl = document.getElementById("inboxEmpty");
+    if(!listEl || !emptyEl) return;
+
+    if(extraErrorText){
+      emptyEl.style.display = "block";
+      emptyEl.textContent = "โหลดแจ้งเตือนไม่ได้: " + extraErrorText;
+      listEl.innerHTML = "";
+      return;
+    }
+
+    if(!unreadNotifs.length){
+      emptyEl.style.display = "block";
+      emptyEl.textContent = "ยังไม่มีแจ้งเตือน";
+      listEl.innerHTML = "";
+      return;
+    }
+
+    emptyEl.style.display = "none";
+    listEl.innerHTML = unreadNotifs.map(n => `
+      <div style="border:1px solid #e5e7eb;border-radius:14px;padding:12px 14px;background:#ffffff;box-shadow:0 10px 20px rgba(15,23,42,.06);">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+          <div>
+            <div style="font-weight:900;color:#0f172a;font-size:15px;">
+              ${escapeHtml(n.title || "แจ้งเตือน")}
+            </div>
+            <div style="color:#64748b;font-size:12px;margin-top:2px;">
+              ${n.request_id ? `คำขอ: <b>${escapeHtml(n.request_id)}</b> • ` : ""}${fmtDateTime(n.created_at)}
+            </div>
+          </div>
+          <button class="btn-link" type="button" data-open-notif="${escapeHtml(n.id)}">เปิดอ่าน</button>
+        </div>
+      </div>
+    `).join("");
+
+    listEl.querySelectorAll("button[data-open-notif]").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const id = btn.getAttribute("data-open-notif");
+        const notif = unreadNotifs.find(x => String(x.id) === String(id));
+        if(!notif) return;
+
+        showCenterAlert({
+          title: notif.title || "แจ้งเตือน",
+          message: notif.message || "-",
+          onClose: async () => {
+            await markNotificationRead(id);
+            await refreshInbox();
+          }
+        });
+      });
+    });
+  }
+
+  async function refreshInbox(){
+    const result = await loadUnreadNotifications();
+    unreadNotifs = result.items || [];
+    updateInboxBadge(unreadNotifs.length);
+    renderInbox(result.error);
+  }
+
+  function wireInbox(){
+    const btn   = document.getElementById("inboxBtn");
+    const modal = document.getElementById("inboxModal");
+    const close = document.getElementById("inboxClose");
+    const readAllBtn = document.getElementById("inboxReadAllBtn");
+    const refreshBtn = document.getElementById("inboxRefreshBtn");
+
+    function showInbox(){ modal.classList.add("show"); }
+    function hideInbox(){ modal.classList.remove("show"); }
+
+    btn.addEventListener("click", async (e)=>{
+      e.preventDefault();
+      showInbox();
+      await refreshInbox();
+    });
+
+    close.addEventListener("click", hideInbox);
+    modal.addEventListener("click", (e)=>{ if(e.target === modal) hideInbox(); });
+
+    refreshBtn.addEventListener("click", async ()=>{ await refreshInbox(); });
+
+    readAllBtn.addEventListener("click", async ()=>{
+      await markAllNotificationsRead();
+      await refreshInbox();
+      showCenterAlert({ title:"สำเร็จ", message:"อ่านแจ้งเตือนทั้งหมดแล้ว" });
+    });
+  }
 
   async function loadMyRequests(){
     const r = await fetch(`${BASE}/api/requests`, {
@@ -628,10 +820,7 @@
         const id = btn.getAttribute("data-retry-id");
         const req = allRequests.find(r => String(r.id) === String(id));
         if (!req) {
-          showCenterAlert({
-            title: "ไม่พบข้อมูล",
-            message: "ไม่พบข้อมูลคำขอ"
-          });
+          showCenterAlert({ title: "ไม่พบข้อมูล", message: "ไม่พบข้อมูลคำขอ" });
           return;
         }
         openEditModal(req);
@@ -662,14 +851,6 @@
     }
   }
 
-  function wireCreditSummaryBar(){
-    const btn = document.getElementById("req-credit-refresh");
-    if(!btn) return;
-    btn.addEventListener("click", ()=>{
-      loadCreditSummaryForRequest();
-    });
-  }
-
   function wireForm(){
     const btn = document.getElementById("btnSubmit");
     btn.addEventListener("click", async ()=>{
@@ -677,33 +858,22 @@
       const amount = Number(document.getElementById("amount").value);
       const desc   = document.getElementById("desc").value.trim();
 
-      // ตรวจสอบฟอร์มก่อน - เฉพาะหัวข้อและจำนวนเงินเท่านั้น
       let isValid = true;
-      
-      // ตรวจสอบหัวข้อ (จำเป็น)
       if (!title) {
         document.getElementById('title-error').style.display = 'block';
         document.getElementById('title').classList.add('error');
         isValid = false;
       }
-      
-      // ตรวจสอบจำนวนเงิน (จำเป็น)
       if (!amount || amount <= 0) {
         document.getElementById('amount-error').style.display = 'block';
         document.getElementById('amount').classList.add('error');
         isValid = false;
       }
-      
-      // ไม่ตรวจสอบรายละเอียด (ไม่จำเป็น)
-      
-      if (!isValid) {
-        // ไม่แสดงกล่องแจ้งเตือนตรงกลาง ให้แสดงเฉพาะข้อความสีแดงใต้ฟิลด์
-        return;
-      }
+      if (!isValid) return;
 
       btn.disabled = true;
 
-      // 1) เช็คเครดิตของโรงเรียนก่อน
+      // ✅ เช็คเครดิตแบบ amount + fee (5)
       try{
         const resCredit = await fetch(`${BASE}/api/finance/credits`, {
           headers:{ Authorization:"Bearer "+token }
@@ -717,24 +887,29 @@
             smallEl.dataset.raw = String(bal);
           }
 
-          if(bal < amount){
+          const fee = FEE_PER_TRANSFER;
+          const totalNeed = amount + fee;
+
+          // ✅ เงื่อนไขพี่ที่ทำงานต้องการ: มี 5000 ขอ 5000 -> ไม่ได้ (เพราะต้องเผื่อ 5)
+          if(bal < totalNeed){
             showCenterAlert({
               title:"เครดิตไม่เพียงพอ",
               message:
-                "เครดิตของโรงเรียนไม่พอสำหรับคำขอเบิกนี้\n" +
+                "เครดิตของโรงเรียนไม่พอสำหรับคำขอนี้ (ต้องเผื่อค่าธรรมเนียม 5)\n" +
                 "เครดิตคงเหลือ: " + fmtBaht(bal) + " เครดิต\n" +
-                "จำนวนที่ขอเบิก: " + fmtBaht(amount) + " บาท"
+                "จำนวนที่ขอ: " + fmtBaht(amount) + " บาท\n" +
+                "ค่าธรรมเนียม: " + fmtBaht(fee) + " เครดิต\n" +
+                "รวมต้องใช้: " + fmtBaht(totalNeed) + " เครดิต"
             });
             btn.disabled = false;
             return;
           }
         }
-        // ถ้าโหลดเครดิตไม่สำเร็จ ปล่อยให้ backend เช็คต่อ
       }catch(e){
-        // ignore เพื่อให้ backend เป็นตัวตัดสิน
+        // ถ้าโหลดเครดิตไม่สำเร็จ ปล่อยให้ backend ตัดสิน
       }
 
-      // 2) ถ้าเครดิตพอ หรือเช็คไม่ได้ → ยิงคำขอตามเดิม (backend ยังเช็คซ้ำอยู่)
+      // ส่งคำขอ
       try{
         const res = await fetch(`${BASE}/api/requests`, {
           method:"POST",
@@ -750,26 +925,39 @@
           })
         });
         const data = await res.json().catch(()=>({}));
+
         if(!res.ok || !data.ok){
-          // กรณี backend ตอบว่าเครดิตไม่พอ หรือ error อื่น
+          // ✅ ถ้า backend ส่งรายละเอียด credit/fee/total มา ให้โชว์ครบ
+          if(data && data.credit !== undefined && data.fee !== undefined && data.total !== undefined){
+            showCenterAlert({
+              title:"ส่งคำขอไม่สำเร็จ",
+              message:
+                (data.error || "เครดิตไม่พอ") + "\n" +
+                "เครดิตคงเหลือ: " + fmtBaht(data.credit) + "\n" +
+                "จำนวนที่ขอ: " + fmtBaht(data.amount) + "\n" +
+                "ค่าธรรมเนียม: " + fmtBaht(data.fee) + "\n" +
+                "รวมต้องใช้: " + fmtBaht(data.total)
+            });
+            throw new Error("stop");
+          }
           throw new Error(data.error || "ส่งคำขอไม่สำเร็จ");
         }
 
         document.getElementById("title").value   = "";
         document.getElementById("amount").value  = "";
         document.getElementById("desc").value    = "";
-        await loadMyRequests();
 
-        // ใช้กล่องแจ้งเตือนตรงกลางแทน alert เดิม
-        showCenterAlert({
-          title:"สำเร็จ",
-          message:"ส่งคำขอเรียบร้อย!"
-        });
+        await loadMyRequests();
+        await loadCreditSummaryForRequest();
+
+        showCenterAlert({ title:"สำเร็จ", message:"ส่งคำขอเรียบร้อย!" });
       }catch(err){
-        showCenterAlert({
-          title:"เกิดข้อผิดพลาด",
-          message:"เกิดข้อผิดพลาด: " + err.message
-        });
+        if(String(err.message) !== "stop"){
+          showCenterAlert({
+            title:"เกิดข้อผิดพลาด",
+            message:"เกิดข้อผิดพลาด: " + err.message
+          });
+        }
       }finally{
         btn.disabled = false;
       }
@@ -786,57 +974,50 @@
   modal.addEventListener("click", e=>{ if(e.target===modal) hideModal(); });
 
   async function openDetailModal(id){
-  try{
-    const res = await fetch(`${BASE}/api/requests/${encodeURIComponent(id)}/timeline`, {
-      headers:{ Authorization:"Bearer "+token }
-    });
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data.error || "โหลดรายละเอียดไม่สำเร็จ");
+    try{
+      const res = await fetch(`${BASE}/api/requests/${encodeURIComponent(id)}/timeline`, {
+        headers:{ Authorization:"Bearer "+token }
+      });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data.error || "โหลดรายละเอียดไม่สำเร็จ");
 
-    const r  = data.request || {};
-    const tl = Array.isArray(data.timeline) ? data.timeline : [];
+      const r  = data.request || {};
+      const tl = Array.isArray(data.timeline) ? data.timeline : [];
 
-    // ---------- เติมข้อมูลส่วนหัว ----------
-    document.getElementById("d-id").textContent     = r.id || "-";
-    document.getElementById("d-school").textContent = r.school || "-";
-    document.getElementById("d-title").textContent  = r.title || "-";
-    document.getElementById("d-amount").textContent =
-      r.amount ? fmtBaht(r.amount) + " บาท" : "-";
-    document.getElementById("d-status").textContent =
-      mapStatusLabel(r.status);
-    document.getElementById("d-desc").textContent   =
-      r.description || "-";
+      document.getElementById("d-id").textContent     = r.id || "-";
+      document.getElementById("d-school").textContent = r.school || "-";
+      document.getElementById("d-title").textContent  = r.title || "-";
+      document.getElementById("d-amount").textContent =
+        r.amount ? fmtBaht(r.amount) + " บาท" : "-";
+      document.getElementById("d-status").textContent =
+        mapStatusLabel(r.status);
+      document.getElementById("d-desc").textContent   =
+        r.description || "-";
 
-    const tb = document.getElementById("d-timeline-body");
+      const tb = document.getElementById("d-timeline-body");
 
-    // ---------- เรียง timeline: ล่าสุดอยู่บนสุด ----------
-    const sortedTimeline = [...tl].sort(
-      (a, b) => new Date(b.created_at) - new Date(a.created_at)
-    );
+      const sortedTimeline = [...tl].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      );
 
-    // ---------- render timeline ----------
-    tb.innerHTML = sortedTimeline.map((row, idx) => {
-      const isLatest = idx === 0;
+      tb.innerHTML = sortedTimeline.map((row, idx) => {
+        const isLatest = idx === 0;
+        const statusClass = row.action ? `status-${String(row.action).toLowerCase()}` : "";
+        return `
+          <tr class="${isLatest ? 'timeline-latest ' + statusClass : ''}">
+            <td>${mapStatusLabel(row.action)}</td>
+            <td class="role">${roleLabel(row.actor_role)}</td>
+            <td>${row.note ? escapeHtml(row.note) : '-'}</td>
+            <td>${fmtDateTime(row.created_at)}</td>
+          </tr>
+        `;
+      }).join("");
 
-      const statusClass = row.action
-        ? `status-${row.action.toLowerCase()}`
-        : "";
-
-      return `
-        <tr class="${isLatest ? 'timeline-latest ' + statusClass : ''}">
-          <td>${mapStatusLabel(row.action)}</td>
-          <td class="role">${roleLabel(row.actor_role)}</td>
-          <td >${row.note ? row.note : '-'}</td>
-          <td>${fmtDateTime(row.created_at)}</td>
-        </tr>
-      `;
-    }).join("");
-
-    showModal();
-  }catch(e){
-    alert("เกิดข้อผิดพลาด: " + e.message);
+      showModal();
+    }catch(e){
+      showCenterAlert({ title:"ผิดพลาด", message:"เกิดข้อผิดพลาด: " + e.message });
+    }
   }
-}
 
   // ===== Modal แก้ไข / ยื่นอีกครั้ง =====
   const editModal   = document.getElementById("editModal");
@@ -857,10 +1038,7 @@
   function openEditModal(req){
     editingRequest = req || null;
     if(!editingRequest){
-      showCenterAlert({
-        title:"ไม่พบข้อมูล",
-        message:"ไม่พบข้อมูลคำขอ"
-      });
+      showCenterAlert({ title:"ไม่พบข้อมูล", message:"ไม่พบข้อมูลคำขอ" });
       return;
     }
     document.getElementById("e-id").textContent = editingRequest.id || "-";
@@ -874,10 +1052,7 @@
 
   editSaveBtn.addEventListener("click", async () => {
     if(!editingRequest) {
-      showCenterAlert({
-        title:"ไม่พบข้อมูล",
-        message:"ไม่พบข้อมูลคำขอ"
-      });
+      showCenterAlert({ title:"ไม่พบข้อมูล", message:"ไม่พบข้อมูลคำขอ" });
       return;
     }
 
@@ -887,10 +1062,7 @@
     const note      = document.getElementById("e-note").value.trim() || "ยื่นคำขออีกครั้ง";
 
     if(!newTitle || !(newAmount > 0)){
-      showCenterAlert({
-        title:"ข้อมูลไม่ครบถ้วน",
-        message:"กรุณากรอกหัวข้อและจำนวนเงินให้ถูกต้อง"
-      });
+      showCenterAlert({ title:"ข้อมูลไม่ครบถ้วน", message:"กรุณากรอกหัวข้อและจำนวนเงินให้ถูกต้อง" });
       return;
     }
 
@@ -918,21 +1090,15 @@
 
       hideEditModal();
       await loadMyRequests();
-      showCenterAlert({
-        title:"สำเร็จ",
-        message:"บันทึกและยื่นคำขออีกครั้งเรียบร้อย"
-      });
+      showCenterAlert({ title:"สำเร็จ", message:"บันทึกและยื่นคำขออีกครั้งเรียบร้อย" });
     }catch(err){
-      showCenterAlert({
-        title:"เกิดข้อผิดพลาด",
-        message:"เกิดข้อผิดพลาด: " + err.message
-      });
+      showCenterAlert({ title:"เกิดข้อผิดพลาด", message:"เกิดข้อผิดพลาด: " + err.message });
     }finally{
       editSaveBtn.disabled = false;
     }
   });
 
-  // ===== Finance (Employee) =====
+  // ===== Finance =====
   async function loadFinanceSummary(){
     const el = document.getElementById("fin-balance");
     if(!el) return;
@@ -963,8 +1129,6 @@
       if(!res.ok) throw new Error("load-accounts-failed");
       const data = await res.json().catch(()=>({}));
       const items = Array.isArray(data.items) ? data.items : [];
-      
-      // อัพเดทข้อมูลบัญชีปัจจุบัน
       currentAccounts = items;
 
       if(!items.length){
@@ -1030,8 +1194,7 @@
 
     form.addEventListener("submit", async (e)=>{
       e.preventDefault();
-      
-      // ตรวจสอบจำนวนบัญชีก่อน
+
       if (currentAccounts.length >= MAX_BANK_ACCOUNTS) {
         showCenterAlert({
           title: "ไม่สามารถเพิ่มบัญชีได้",
@@ -1078,23 +1241,17 @@
         document.getElementById("fin-account-number").value = "";
 
         await loadFinanceAccounts();
-        
-        showCenterAlert({
-          title: "สำเร็จ",
-          message: "เพิ่มบัญชีธนาคารเรียบร้อย"
-        });
+
+        showCenterAlert({ title: "สำเร็จ", message: "เพิ่มบัญชีธนาคารเรียบร้อย" });
       }catch(err){
-        showCenterAlert({
-          title: "เกิดข้อผิดพลาด",
-          message: "เกิดข้อผิดพลาดในการเพิ่มบัญชี: " + err.message
-        });
+        showCenterAlert({ title: "เกิดข้อผิดพลาด", message: "เกิดข้อผิดพลาดในการเพิ่มบัญชี: " + err.message });
       }finally{
         if(btn) btn.disabled = false;
       }
     });
   }
 
-  // ===== CREDIT (หน้าเมนูเครดิต) =====
+  // ===== CREDIT =====
   async function loadCredit(){
     const balEl = document.getElementById("credit-balance");
     const msgEl = document.getElementById("credit-message");
@@ -1169,7 +1326,7 @@
     });
   }
 
-  // ===== Sidebar / เมนูสลับ section =====
+  // ===== Sidebar =====
   function initSidebar(){
     const layout   = document.getElementById("empLayout");
     const toggle   = document.getElementById("sidebarToggle");
@@ -1215,14 +1372,16 @@
 
       bindLogout();
       initSidebar();
+      wireInbox();               // ✅ กล่องจดหมาย
       wireForm();
-      initFormValidation(); // เรียกฟังก์ชันตรวจสอบฟอร์ม
+      initFormValidation();
       wireFinanceForm();
       wireCredit();
-      wireCreditSummaryBar();
+
       await Promise.all([
         loadMyRequests(),
-        loadCreditSummaryForRequest()
+        loadCreditSummaryForRequest(),
+        refreshInbox()           // ✅ โหลดแจ้งเตือนครั้งแรก
       ]);
     }catch(e){
       localStorage.removeItem("jwt_token");

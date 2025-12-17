@@ -439,7 +439,10 @@ header .subtitle{
     color 0.15s ease;
 }
 .btn-link:hover{
-  color:#01579B;
+  background: linear-gradient(135deg, #0ea5e9, #0369a1);
+  color: #f9fafb;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.25);
 }
 
 /* ---------- Responsive ---------- */
